@@ -19,28 +19,22 @@ from imageio.core.fetching import get_remote_file
 import xnat4tests
 import medimages4tests.dummy.nifti
 import medimages4tests.dummy.dicom.mri.fmap.siemens.skyra.syngo_d13c
-from arcana.core.deploy.image.base import BaseImage
-from arcana.common import Clinical
-from arcana.core.data.set import Dataset
+from pydra2app.core.image.base import BaseImage
+from frametree.common import Clinical
+from frametree.core.set import Dataset
 from fileformats.medimage import NiftiGzX, NiftiGz, DicomSeries, NiftiX
 from fileformats.text import Plain as Text
 from fileformats.image import Png
 from fileformats.application import Json
 from fileformats.generic import Directory
-from arcana.xnat.data.api import Xnat
-from arcana.xnat.utils.testing import (
+from frametree.xnat.api import Xnat
+from frametree.xnat.utils.testing import (
     TestXnatDatasetBlueprint,
     FileSetEntryBlueprint as FileBP,
     ScanBlueprint as ScanBP,
 )
-from arcana.xnat.data.cs import XnatViaCS
+from frametree.xnat.cs import XnatViaCS
 
-try:
-    from pydra import set_input_validator
-except ImportError:
-    pass
-else:
-    set_input_validator(True)
 
 # For debugging in IDE's don't catch raised exceptions and let the IDE
 # break at it
@@ -329,7 +323,9 @@ def static_dataset(
     project_id = run_prefix + dataset_id + str(hex(random.getrandbits(16)))[2:]
     logger.debug("Making dataset at %s", project_id)
     blueprint.make_dataset(
-        dataset_id=project_id, store=xnat_repository, source_data=source_data,
+        dataset_id=project_id,
+        store=xnat_repository,
+        source_data=source_data,
         name="",
     )
     logger.debug("accessing dataset at %s", project_id)
@@ -355,7 +351,9 @@ def dataset(
         + str(hex(random.getrandbits(16)))[2:]
     )
     blueprint.make_dataset(
-        dataset_id=project_id, store=xnat_repository, source_data=source_data,
+        dataset_id=project_id,
+        store=xnat_repository,
+        source_data=source_data,
         name="",
     )
     return access_dataset(project_id, access_method, xnat_repository, xnat_archive_dir)
@@ -368,14 +366,11 @@ def simple_dataset(xnat_repository, work_dir, run_prefix):
         scans=[
             ScanBP(
                 name="scan1",
-                resources=[FileBP(path="TEXT", datatype=Text, filenames=["file.txt"])])
+                resources=[FileBP(path="TEXT", datatype=Text, filenames=["file.txt"])],
+            )
         ],
     )
-    project_id = (
-        run_prefix
-        + "simple"
-        + str(hex(random.getrandbits(16)))[2:]
-    )
+    project_id = run_prefix + "simple" + str(hex(random.getrandbits(16)))[2:]
     return blueprint.make_dataset(xnat_repository, project_id, name="")
 
 

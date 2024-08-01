@@ -4,10 +4,10 @@ from pathlib import Path
 import json
 import attrs
 from neurodocker.reproenv import DockerRenderer
-from pydra2app.xnat.data import XnatViaCS
-from pydra2app.core.utils.serialize import ClassResolver, ObjectConverter
-from pydra2app.core.data.store import DataStore
-from pydra2app.core.deploy.image import App
+from frametree.xnat import XnatViaCS
+from frametree.core.serialize import ClassResolver, ObjectConverter
+from frametree.core.store import DataStore
+from pydra2app.core.image import App
 from .command import XnatCommand
 
 

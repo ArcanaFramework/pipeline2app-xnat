@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 import docker
 import xnat
-from pydra2app.core.cli.deploy import make_app
+from pydra2app.core.cli import make_app
 from pydra2app.xnat.cli.update_release import (
     pull_xnat_images,
     xnat_auth_refresh,
@@ -15,7 +15,7 @@ from pydra2app.xnat.cli.update_release import (
     PULL_IMAGES_XNAT_USER_KEY,
     PULL_IMAGES_XNAT_PASS_KEY,
 )
-from pydra2app.core.utils.misc import show_cli_trace
+from frametree.core.utils import show_cli_trace
 
 
 @pytest.mark.xfail(

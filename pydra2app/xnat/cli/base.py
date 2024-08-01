@@ -1,4 +1,4 @@
-from pydra2app.core.cli.ext import ext
+from pydra2app.core.cli import ext
 
 
 @ext.group(name="xnat")

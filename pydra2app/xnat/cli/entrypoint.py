@@ -1,6 +1,6 @@
 import click
-from pydra2app.core.deploy.command import entrypoint_opts
-from pydra2app.xnat.deploy import XnatApp
+from pydra2app.core.command import entrypoint_opts
+from pydra2app.xnat import XnatApp
 from .base import xnat_group
 
 

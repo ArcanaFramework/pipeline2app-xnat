@@ -3,9 +3,9 @@ import typing as ty
 import re
 import attrs
 from fileformats.core import FileSet, to_mime
-from pydra2app.core.deploy.command.base import ContainerCommand
-from pydra2app.xnat.data import XnatViaCS
-from pydra2app.common import Clinical
+from pydra2app.core.command.base import ContainerCommand
+from frametree.xnat import XnatViaCS
+from frametree.common import Clinical
 
 if ty.TYPE_CHECKING:
     from .image import XnatApp

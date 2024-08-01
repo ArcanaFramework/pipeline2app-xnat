@@ -5,10 +5,10 @@ import logging
 import tempfile
 import attrs
 import xnat
-from pydra2app.common import Clinical
-from pydra2app.core.data.space import DataSpace
-from pydra2app.core.data.row import DataRow
-from pydra2app.testing.data.blueprint import TestDatasetBlueprint, FileSetEntryBlueprint
+from frametree.common import Clinical
+from frametree.core.space import DataSpace
+from frametree.core.row import DataRow
+from frametree.testing.blueprint import TestDatasetBlueprint, FileSetEntryBlueprint
 from pydra2app.core.exceptions import Pydra2AppError
 
 

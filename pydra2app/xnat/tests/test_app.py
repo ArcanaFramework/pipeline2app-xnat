@@ -7,9 +7,9 @@ from conftest import (
     FileBP,
     access_dataset,
 )
-from pydra2app.xnat.deploy.image import XnatApp
-from pydra2app.xnat.deploy.command import XnatCommand
-from pydra2app.xnat.utils.testing import (
+from pydra2app.xnat.image import XnatApp
+from pydra2app.xnat.command import XnatCommand
+from pydra2app.xnat.testing import (
     install_and_launch_xnat_cs_command,
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
