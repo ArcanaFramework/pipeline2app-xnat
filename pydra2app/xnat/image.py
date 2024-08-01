@@ -128,5 +128,5 @@ class XnatApp(App):
         dockerfile.run(command=f"mkdir -p {str(XnatViaCS.CACHE_DIR)}")
         dockerfile.copy(
             source=["./stores.yaml"],
-            destination=self.IN_DOCKER_PYDRA2APP_HOME_DIR + "/stores.yaml",
+            destination=self.IN_DOCKER_FRAMETREE_HOME_DIR + "/stores.yaml",
         )
