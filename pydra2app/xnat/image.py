@@ -84,7 +84,7 @@ class XnatApp(App):
         ----------
         dockerfile : DockerRenderer
             Neurodocker renderer to build
-        xnat_command : dict[str, Any]
+        xnat_command : ty.Dict[str, Any]
             XNAT command to write to file within the image for future reference
         build_dir : Path
             path to build directory
@@ -128,5 +128,5 @@ class XnatApp(App):
         dockerfile.run(command=f"mkdir -p {str(XnatViaCS.CACHE_DIR)}")
         dockerfile.copy(
             source=["./stores.yaml"],
-            destination=self.IN_DOCKER_ARCANA_HOME_DIR + "/stores.yaml",
+            destination=self.IN_DOCKER_PYDRA2APP_HOME_DIR + "/stores.yaml",
         )

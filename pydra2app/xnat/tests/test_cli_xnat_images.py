@@ -18,13 +18,8 @@ from pydra2app.xnat.cli.update_release import (
 from frametree.core.utils import show_cli_trace
 
 
-@pytest.mark.xfail(
-    sys.platform == "linux",
-    reason=(
-        "Haven't been able to setup either SSL for the Xnat4Tests test docker "
-        "registry, or the internal host on GH Actions as an insecure "
-        "registries"
-    ),
+@pytest.mark.skip(
+    reason=("Latest versions of XNAT have removed the pull images functionality"),
 )
 def test_pull_xnat_images(
     xnat_repository,

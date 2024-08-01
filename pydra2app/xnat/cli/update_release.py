@@ -66,9 +66,9 @@ def pull_xnat_images(manifest_file, server, user, password, filters_file):
 
         Parameters
         ----------
-        entry : dict[str, Any]
+        entry : ty.Dict[str, Any]
             a image entry in the manifest
-        exprs : list[dict[str, str]]
+        exprs : list[ty.Dict[str, str]]
             match criteria
         default : bool
             the value if match_exprs are empty

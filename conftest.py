@@ -28,7 +28,7 @@ from fileformats.image import Png
 from fileformats.application import Json
 from fileformats.generic import Directory
 from frametree.xnat.api import Xnat
-from frametree.xnat.utils.testing import (
+from frametree.xnat.testing import (
     TestXnatDatasetBlueprint,
     FileSetEntryBlueprint as FileBP,
     ScanBlueprint as ScanBP,
@@ -117,7 +117,7 @@ def pkg_dir():
 @pytest.fixture
 def arcana_home(work_dir):
     arcana_home = work_dir / "arcana-home"
-    with patch.dict(os.environ, {"ARCANA_HOME": str(arcana_home)}):
+    with patch.dict(os.environ, {"PYDRA2APP_HOME": str(arcana_home)}):
         yield arcana_home
 
 
@@ -499,7 +499,7 @@ def dummy_niftix(work_dir):
 @pytest.fixture(scope="session")
 def command_spec():
     return {
-        "task": "arcana.testing.tasks:concatenate",
+        "task": "frametree.testing.tasks:concatenate",
         "inputs": {
             "first_file": {
                 "datatype": "text/text-file",

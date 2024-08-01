@@ -1,55 +1,11 @@
 import typing as ty
 import time
-from pathlib import Path
 import logging
-import tempfile
-import attrs
 import xnat
-from frametree.common import Clinical
-from frametree.core.space import DataSpace
-from frametree.core.row import DataRow
-from frametree.testing.blueprint import TestDatasetBlueprint, FileSetEntryBlueprint
 from pydra2app.core.exceptions import Pydra2AppError
 
 
-logger = logging.getLogger("pydra2app")
-
-
-@attrs.define
-class ScanBlueprint:
-
-    name: str
-    resources: ty.List[FileSetEntryBlueprint]
-
-
-@attrs.define(slots=False, kw_only=True)
-class TestXnatDatasetBlueprint(TestDatasetBlueprint):
-
-    scans: ty.List[ScanBlueprint]
-
-    # Overwrite attributes in core blueprint class
-    space: type = Clinical
-    hierarchy: list[DataSpace] = ["subject", "session"]
-    filesets: ty.Optional[list[str]] = None
-
-    def make_entries(self, row: DataRow, source_data: ty.Optional[Path] = None):
-        logger.debug("Making entries in %s row: %s", row, self.scans)
-        xrow = row.dataset.store.get_xrow(row)
-        xclasses = xrow.xnat_session.classes
-        for scan_id, scan_bp in enumerate(self.scans, start=1):
-            xscan = xclasses.MrScanData(id=scan_id, type=scan_bp.name, parent=xrow)
-            for resource_bp in scan_bp.resources:
-                tmp_dir = Path(tempfile.mkdtemp())
-                # Create the resource
-                xresource = xscan.create_resource(resource_bp.path)
-                # Create the dummy files
-                item = resource_bp.make_item(
-                    source_data=source_data,
-                    source_fallback=True,
-                    escape_source_name=False,
-                )
-                item.copy(tmp_dir)
-                xresource.upload_dir(tmp_dir)
+logger = logging.getLogger("pydra2app-xnat")
 
 
 def install_and_launch_xnat_cs_command(
@@ -68,13 +24,13 @@ def install_and_launch_xnat_cs_command(
     ----------
     cmd_name : str
         The name to install the command as
-    command_json : dict[str, Any]
+    command_json : ty.Dict[str, Any]
         JSON that defines the XNAT command in the container service (see `generate_xnat_command`)
     project_id : str
         ID of the project to enable the command for
     session_id : str
         ID of the session to launch the command on
-    inputs : dict[str, str]
+    inputs : ty.Dict[str, str]
         Inputs passed to the pipeline at launch (i.e. typically through text fields in the CS launch UI)
     xlogin : xnat.XNATSession
         XnatPy connection to the XNAT server

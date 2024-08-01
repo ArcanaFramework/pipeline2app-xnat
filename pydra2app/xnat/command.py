@@ -59,7 +59,7 @@ class XnatCommand(ContainerCommand):
 
         Returns
         -------
-        dict[str, *]
+        ty.Dict[str, *]
             the JSON-like dictionary to specify the command to the XNAT CS
         """
 
@@ -203,7 +203,7 @@ class XnatCommand(ContainerCommand):
     def add_pydra2app_flags_field(self, cmd_json):
 
         # Add input for dataset name
-        FLAGS_KEY = "#ARCANA_FLAGS#"
+        FLAGS_KEY = "#PYDRA2APP_FLAGS#"
         cmd_json["inputs"].append(
             {
                 "name": "Pydra2App_flags",
