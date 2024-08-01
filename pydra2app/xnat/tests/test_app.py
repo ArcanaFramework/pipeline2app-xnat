@@ -82,13 +82,14 @@ def run_spec(
             "packages": {
                 "system": ["git", "vim"],
                 "pip": [
-                    "pydra2app",
-                    "pydra2app-xnat",
-                    "pydra2app-bids",
                     "fileformats",
                     "fileformats-medimage",
                     "fileformats-medimage-extras",
+                    "frametree-bids",
+                    "frametree-xnat",
                     "pydra",
+                    "pydra2app",
+                    "pydra2app-xnat",
                 ],
             },
             "command": bids_command_spec,
