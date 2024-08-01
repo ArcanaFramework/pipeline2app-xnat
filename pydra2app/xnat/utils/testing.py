@@ -5,14 +5,14 @@ import logging
 import tempfile
 import attrs
 import xnat
-from arcana.common import Clinical
-from arcana.core.data.space import DataSpace
-from arcana.core.data.row import DataRow
-from arcana.testing.data.blueprint import TestDatasetBlueprint, FileSetEntryBlueprint
-from arcana.core.exceptions import ArcanaError
+from pydra2app.common import Clinical
+from pydra2app.core.data.space import DataSpace
+from pydra2app.core.data.row import DataRow
+from pydra2app.testing.data.blueprint import TestDatasetBlueprint, FileSetEntryBlueprint
+from pydra2app.core.exceptions import Pydra2AppError
 
 
-logger = logging.getLogger("arcana")
+logger = logging.getLogger("pydra2app")
 
 
 @attrs.define
@@ -37,9 +37,7 @@ class TestXnatDatasetBlueprint(TestDatasetBlueprint):
         xrow = row.dataset.store.get_xrow(row)
         xclasses = xrow.xnat_session.classes
         for scan_id, scan_bp in enumerate(self.scans, start=1):
-            xscan = xclasses.MrScanData(
-                id=scan_id, type=scan_bp.name, parent=xrow
-            )
+            xscan = xclasses.MrScanData(id=scan_id, type=scan_bp.name, parent=xrow)
             for resource_bp in scan_bp.resources:
                 tmp_dir = Path(tempfile.mkdtemp())
                 # Create the resource
@@ -115,7 +113,7 @@ def install_and_launch_xnat_cs_command(
     ).json()
 
     if launch_result["status"] != "success":
-        raise ArcanaError(
+        raise Pydra2AppError(
             f"{cmd_name} workflow wasn't launched successfully ({launch_result['status']})"
         )
     workflow_id = launch_result["workflow-id"]

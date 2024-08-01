@@ -4,17 +4,21 @@ from pathlib import Path
 import json
 import attrs
 from neurodocker.reproenv import DockerRenderer
-from arcana.xnat.data import XnatViaCS
-from arcana.core.utils.serialize import ClassResolver, ObjectConverter
-from arcana.core.data.store import DataStore
-from arcana.core.deploy.image import App
+from pydra2app.xnat.data import XnatViaCS
+from pydra2app.core.utils.serialize import ClassResolver, ObjectConverter
+from pydra2app.core.data.store import DataStore
+from pydra2app.core.deploy.image import App
 from .command import XnatCommand
 
 
 @attrs.define(kw_only=True)
 class XnatApp(App):
 
-    PIP_DEPENDENCIES = ("arcana-xnat", "fileformats-medimage", "fileformats-medimage-extras")
+    PIP_DEPENDENCIES = (
+        "pydra2app-xnat",
+        "fileformats-medimage",
+        "fileformats-medimage-extras",
+    )
 
     command: XnatCommand = attrs.field(
         converter=ObjectConverter(
@@ -120,7 +124,7 @@ class XnatApp(App):
         DataStore.save_configs(
             {"xnat-cs": xnat_cs_store_entry}, config_path=build_dir / "stores.yaml"
         )
-        dockerfile.run(command="mkdir -p /root/.arcana")
+        dockerfile.run(command="mkdir -p /root/.pydra2app")
         dockerfile.run(command=f"mkdir -p {str(XnatViaCS.CACHE_DIR)}")
         dockerfile.copy(
             source=["./stores.yaml"],

@@ -7,9 +7,9 @@ from conftest import (
     FileBP,
     access_dataset,
 )
-from arcana.xnat.deploy.image import XnatApp
-from arcana.xnat.deploy.command import XnatCommand
-from arcana.xnat.utils.testing import (
+from pydra2app.xnat.deploy.image import XnatApp
+from pydra2app.xnat.deploy.command import XnatCommand
+from pydra2app.xnat.utils.testing import (
     install_and_launch_xnat_cs_command,
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
@@ -32,12 +32,12 @@ def run_spec(
     spec = {}
     if request.param == "func":
         spec["build"] = {
-            "org": "arcana-tests",
+            "org": "pydra2app-tests",
             "name": "concatenate-xnat-cs",
             "version": {
                 "package": "1.0",
             },
-            "title": "A pipeline to test Arcana's deployment tool",
+            "title": "A pipeline to test Pydra2App's deployment tool",
             "command": command_spec,
             "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
             "docs": {
@@ -48,8 +48,8 @@ def run_spec(
             "packages": {
                 "system": ["git", "vim"],
                 "pip": [
-                    "arcana",
-                    "arcana-xnat",
+                    "pydra2app",
+                    "pydra2app-xnat",
                     "fileformats",
                     "fileformats-medimage",
                     "pydra",
@@ -69,7 +69,7 @@ def run_spec(
     elif request.param == "bids_app":
         bids_command_spec["configuration"]["executable"] = "/launch.sh"
         spec["build"] = {
-            "org": "arcana-tests",
+            "org": "pydra2app-tests",
             "name": "bids-app-xnat-cs",
             "version": {
                 "package": "1.0",
@@ -82,9 +82,9 @@ def run_spec(
             "packages": {
                 "system": ["git", "vim"],
                 "pip": [
-                    "arcana",
-                    "arcana-xnat",
-                    "arcana-bids",
+                    "pydra2app",
+                    "pydra2app-xnat",
+                    "pydra2app-bids",
                     "fileformats",
                     "fileformats-medimage",
                     "fileformats-medimage-extras",
@@ -173,7 +173,7 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
     image_spec.make(
         build_dir=work_dir,
-        arcana_install_extras=["test"],
+        pydra2app_install_extras=["test"],
         use_local_packages=True,
         use_test_config=True,
     )
@@ -210,4 +210,6 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
         assert status == "Complete", f"Workflow {workflow_id} failed.\n{out_str}"
 
         for deriv in blueprint.derivatives:
-            assert [Path(f).name for f in test_xsession.resources[deriv.path].files] == deriv.filenames
+            assert [
+                Path(f).name for f in test_xsession.resources[deriv.path].files
+            ] == deriv.filenames

@@ -3,9 +3,9 @@ import typing as ty
 import re
 import attrs
 from fileformats.core import FileSet, to_mime
-from arcana.core.deploy.command.base import ContainerCommand
-from arcana.xnat.data import XnatViaCS
-from arcana.common import Clinical
+from pydra2app.core.deploy.command.base import ContainerCommand
+from pydra2app.xnat.data import XnatViaCS
+from pydra2app.common import Clinical
 
 if ty.TYPE_CHECKING:
     from .image import XnatApp
@@ -39,13 +39,13 @@ class XnatCommand(ContainerCommand):
 
         output_args = self.add_output_fields(cmd_json)
 
-        flag_arg = self.add_arcana_flags_field(cmd_json)
+        flag_arg = self.add_pydra2app_flags_field(cmd_json)
 
         xnat_input_args = self.add_inputs_from_xnat(cmd_json)
 
         cmd_json["command-line"] = (
             self.activate_conda_cmd()
-            + "arcana ext xnat cs-entrypoint xnat-cs//[PROJECT_ID] "
+            + "pydra2app ext xnat cs-entrypoint xnat-cs//[PROJECT_ID] "
             + " ".join(
                 input_args + output_args + param_args + xnat_input_args + [flag_arg]
             )
@@ -65,9 +65,7 @@ class XnatCommand(ContainerCommand):
 
         cmd_json = {
             "name": self.name,
-            "description": (
-                f"{self.name} {self.image.version}: {self.image.title}"
-            ),
+            "description": (f"{self.name} {self.image.version}: {self.image.title}"),
             "label": self.name,
             "schema-version": "1.0",
             "image": self.image.reference,
@@ -202,14 +200,14 @@ class XnatCommand(ContainerCommand):
 
         return cmd_args
 
-    def add_arcana_flags_field(self, cmd_json):
+    def add_pydra2app_flags_field(self, cmd_json):
 
         # Add input for dataset name
         FLAGS_KEY = "#ARCANA_FLAGS#"
         cmd_json["inputs"].append(
             {
-                "name": "Arcana_flags",
-                "description": "Flags passed to `run-arcana-pipeline` command",
+                "name": "Pydra2App_flags",
+                "description": "Flags passed to `run-pydra2app-pipeline` command",
                 "type": "string",
                 "default-value": (
                     "--plugin serial "
