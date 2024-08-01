@@ -92,6 +92,11 @@ def install_and_launch_xnat_cs_command(
         )
 
     container_id = wf_result["comments"]
+    if not container_id:
+        raise RuntimeError(
+            f"Container failed for launch with status '{wf_result['status']}':\n"
+            f"{wf_result['details']}"
+        )
 
     # Get workflow stdout/stderr for error messages if required
     out_str = ""
