@@ -1,5 +1,5 @@
 # Pydra2App - XNAT
-![tests](https://github.com/arcanaframework/pydra2app-xnat/actions/workflows/tests.yml/badge.svg)
+[![tests](https://github.com/arcanaframework/pydra2app-xnat/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/ArcanaFramework/pydra2app-xnat/actions/workflows/ci-cd.yml)
 [![codecov](https://codecov.io/gh/arcanaframework/pydra2app-xnat/branch/main/graph/badge.svg?token=UIS0OGPST7)](https://codecov.io/gh/arcanaframework/pydra2app-xnat)
 [![Python versions](https://img.shields.io/pypi/pyversions/pydra2app-xnat.svg)](https://pypi.python.org/pypi/pydra2app-xnat/)
 [![Latest Version](https://img.shields.io/pypi/v/pydra2app-xnat.svg)](https://pypi.python.org/pypi/pydra2app-xnat/)
