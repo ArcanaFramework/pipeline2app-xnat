@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pydra2app-xnat"
 description = "An extension of the pydra2app to support making XNAT container service images"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "pydra2app",
