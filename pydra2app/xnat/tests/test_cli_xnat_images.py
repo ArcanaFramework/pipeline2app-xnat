@@ -1,4 +1,3 @@
-import sys
 import os
 from copy import copy
 import json
@@ -7,13 +6,13 @@ from unittest.mock import patch
 import pytest
 import docker
 import xnat
-from pydra2app.core.cli import make_app
-from pydra2app.xnat.cli.update_release import (
-    pull_xnat_images,
-    xnat_auth_refresh,
-    PULL_IMAGES_XNAT_HOST_KEY,
-    PULL_IMAGES_XNAT_USER_KEY,
-    PULL_IMAGES_XNAT_PASS_KEY,
+from pydra2app.core.cli import make
+from pydra2app.xnat.cli.release import (
+    deploy_pipelines,
+    save_token,
+    XNAT_HOST_KEY,
+    XNAT_USER_KEY,
+    XNAT_PASS_KEY,
 )
 from frametree.core.utils import show_cli_trace
 
@@ -21,7 +20,7 @@ from frametree.core.utils import show_cli_trace
 @pytest.mark.skip(
     reason=("Latest versions of XNAT have removed the pull images functionality"),
 )
-def test_pull_xnat_images(
+def test_deploy_pipelines(
     xnat_repository,
     command_spec,
     work_dir,
@@ -81,10 +80,10 @@ def test_pull_xnat_images(
     manifest_path = work_dir / "manifest.json"
 
     result = cli_runner(
-        make_app,
+        make,
         [
+            "xnat",
             str(spec_dir),
-            "xnat:XnatApp",
             "--build-dir",
             str(build_dir),
             "--registry",
@@ -100,7 +99,7 @@ def test_pull_xnat_images(
             run_prefix,
             "--save-manifest",
             str(manifest_path),
-            "--use-test-config",
+            "--for-localhost",
             "--push",
         ],
     )
@@ -139,13 +138,13 @@ def test_pull_xnat_images(
     with patch.dict(
         os.environ,
         {
-            PULL_IMAGES_XNAT_HOST_KEY: xnat4tests_config.xnat_uri,
-            PULL_IMAGES_XNAT_USER_KEY: xnat4tests_config.xnat_user,
-            PULL_IMAGES_XNAT_PASS_KEY: xnat4tests_config.xnat_password,
+            XNAT_HOST_KEY: xnat4tests_config.xnat_uri,
+            XNAT_USER_KEY: xnat4tests_config.xnat_user,
+            XNAT_PASS_KEY: xnat4tests_config.xnat_password,
         },
     ):
         result = cli_runner(
-            pull_xnat_images,
+            deploy_pipelines,
             [str(manifest_path), "--filters", str(filters_file)],
         )
 
@@ -162,7 +161,7 @@ def test_pull_xnat_images(
     assert all(cmd in available_cmds for cmd in expected_commands)
 
 
-def test_xnat_auth_refresh(xnat_repository, work_dir, cli_runner):
+def test_save_token(xnat_repository, work_dir, cli_runner):
 
     config_path = work_dir / "config.yaml"
     with open(config_path, "w") as f:
@@ -181,7 +180,7 @@ def test_xnat_auth_refresh(xnat_repository, work_dir, cli_runner):
         )
 
     result = cli_runner(
-        xnat_auth_refresh,
+        save_token,
         [str(config_path), str(auth_path)],
     )
 
