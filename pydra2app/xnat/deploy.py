@@ -195,7 +195,7 @@ def launch_cs_command(
         time.sleep(poll_interval)
 
     launch_status = wf_result["status"]
-    if launch_status.lower() != "success":
+    if launch_status != "Complete":
         raise ValueError(
             f"Launching {cmd_name} in the XNAT CS failed with status {launch_status} "
             f"for inputs: \n{launch_json}"
