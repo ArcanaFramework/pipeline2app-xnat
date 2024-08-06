@@ -9,7 +9,7 @@ from conftest import (
 )
 from pydra2app.xnat.image import XnatApp
 from pydra2app.xnat.command import XnatCommand
-from pydra2app.xnat.testing import (
+from pydra2app.xnat.deploy import (
     install_and_launch_xnat_cs_command,
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
@@ -176,7 +176,7 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
         build_dir=work_dir,
         pydra2app_install_extras=["test"],
         use_local_packages=True,
-        use_test_config=True,
+        for_localhost=True,
     )
 
     # We manually set the command in the test XNAT instance as commands are
