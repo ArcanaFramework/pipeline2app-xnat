@@ -9,12 +9,15 @@ from pydra2app.core.utils import extract_file_from_docker_image
 
 logger = logging.getLogger("pydra2app-xnat")
 
+INTERNAL_INPUTS = ("Pydra2App_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
+
 
 def install_cs_command(
     image_name_or_command_json: ty.Union[str, ty.Dict[str, ty.Any]],
     xlogin: xnat.XNATSession,
     enable: bool = False,
     projects_to_enable: ty.Sequence[str] = (),
+    replace_existing: bool = False,
 ):
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
@@ -29,6 +32,8 @@ def install_cs_command(
         Enable the command globally
     projects_to_enable : ty.Sequence[str]
         ID of the project to enable the command for
+    replace_existing : bool
+        Whether to replace existing command with the same name
 
     Returns
     -------
@@ -36,13 +41,13 @@ def install_cs_command(
         the ID of the installed command
     """
     if isinstance(image_name_or_command_json, str):
-        commands = xlogin.get("/xapi/commands").json()
-        commands = [c for c in commands if c["image"] == image_name_or_command_json]
-        if not commands:
-            raise RuntimeError("Did not find ")
         command_json_file = extract_file_from_docker_image(
             image_name_or_command_json, "/xnat_command.json"
         )
+        if command_json_file is None:
+            raise RuntimeError(
+                f"Could not find command JSON file in '{image_name_or_command_json}'"
+            )
         with open(command_json_file) as f:
             command_json = json.load(f)
     elif isinstance(image_name_or_command_json, dict):
@@ -53,7 +58,15 @@ def install_cs_command(
             "expected str or dict"
         )
 
+    cmd_name = command_json["name"]
     wrapper_name = command_json["xnat"][0]["name"]
+
+    if replace_existing:
+        for cmd in xlogin.get("/xapi/commands").json():
+            if cmd["name"] == cmd_name:
+                xlogin.delete(f"/xapi/commands/{cmd['id']}", accepted_status=[200, 204])
+                logger.info(f"Deleted existing command '{cmd_name}'")
+
     cmd_id = xlogin.post("/xapi/commands", json=command_json).json()
 
     # Enable the command globally and in the project
@@ -133,7 +146,30 @@ def launch_cs_command(
     cmd_id = command_json["id"]
     cmd_name = command_json["name"]
 
-    launch_json = {"SESSION": f"/archive/experiments/{session_id}"}
+    launch_json = {
+        "SESSION": f"/archive/projects/{project_id}/experiments/{session_id}"
+    }
+
+    provided_inputs = list(inputs.keys())
+    input_names = [
+        i["name"] for i in command_json["inputs"] if i["name"] not in INTERNAL_INPUTS
+    ]
+    required_inputs = [
+        i["name"]
+        for i in command_json["inputs"]
+        if i["required"] and i["name"] not in INTERNAL_INPUTS
+    ]
+
+    missing_inputs = list(set(required_inputs) - set(provided_inputs))
+    unexpected_inputs = list(set(provided_inputs) - set(input_names))
+    if missing_inputs or unexpected_inputs:
+        raise ValueError(
+            f"Error launching '{cmd_name}' command:\n"
+            f"    Valid inputs: {input_names}\n"
+            f"    Provided inputs: {provided_inputs}\n"
+            f"    Missing required inputs: {missing_inputs}\n"
+            f"    Unexpected inputs: {unexpected_inputs}\n"
+        )
 
     launch_json.update(inputs)
 

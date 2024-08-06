@@ -17,19 +17,25 @@ XNAT_HOST_KEY = "XNAT_HOST"
 XNAT_USER_KEY = "XNAT_USER"
 XNAT_PASS_KEY = "XNAT_PASS"
 XNAT_AUTH_FILE_KEY = "XNAT_AUTH_FILE"
-XNAT_AUTH_FILE_DEFAULT = Path("~/.pydra2app_xnat_auth.json").expanduser()
+XNAT_AUTH_FILE_DEFAULT = Path("~/.pydra2app_xnat_user_token.json").expanduser()
 
 
 def load_auth(server, user, password, auth_file):
-    if server is None:
+    if server is not None:
         if user is None:
             raise RuntimeError(f"A user must be provided if a server ({server}) is")
         if password is None:
             raise RuntimeError(f"a password must be provided if a server ({server}) is")
     else:
+        if auth_file == XNAT_AUTH_FILE_DEFAULT and not Path(auth_file).exists():
+            raise RuntimeError(
+                "An auth file must be provided if no server is. "
+                "Use pydra2app ext xnat save-token to create one"
+            )
         click.echo(f"Reading existing alias/token pair from '{str(auth_file)}")
         with open(auth_file) as fp:
             auth = json.load(fp)
+        server = auth["server"]
         user = auth["alias"]
         password = auth["secret"]
     return server, user, password
@@ -43,19 +49,24 @@ IMAGE_OR_COMMAND_FILE the name of the Pydra2App container service pipeline Docke
 the path to a command JSON file to install
 """,
 )
-@click.argument("image_or_command_file", type=click.File())
+@click.argument("image_or_command_file", type=str)
 @click.option(
-    "--enable",
+    "--enable/--disable",
     type=bool,
     default=False,
     help=("Whether to enable the command globally"),
 )
 @click.option(
     "--enable-project",
-    "enable_projects",
+    "projects_to_enable",
     type=str,
     multiple=True,
     help=("Enable the command for the given project"),
+)
+@click.option(
+    "--replace-existing/--no-replace-existing",
+    default=False,
+    help=("Whether to replace existing command with the same name"),
 )
 @click.option(
     "--server",
@@ -81,7 +92,14 @@ the path to a command JSON file to install
     help=("The path to save the alias/token pair to"),
 )
 def install_command(
-    image_or_command_file, enable, projects_to_enable, server, user, password, auth_file
+    image_or_command_file,
+    enable,
+    projects_to_enable,
+    replace_existing,
+    server,
+    user,
+    password,
+    auth_file,
 ):
     server, user, password = load_auth(server, user, password, auth_file)
 
@@ -95,6 +113,7 @@ def install_command(
             xlogin=xlogin,
             enable=enable,
             projects_to_enable=projects_to_enable,
+            replace_existing=replace_existing,
         )
 
     click.echo(
@@ -173,12 +192,20 @@ def launch_command(
 
     server, user, password = load_auth(server, user, password, auth_file)
 
+    inputs_dict = {}
+    for name, val in inputs:
+        if name in inputs_dict:
+            raise KeyError(
+                f"Duplicate input name '{name}' (values: {inputs_dict[name]}, {val})"
+            )
+        inputs_dict[name] = val
+
     with xnat.connect(server=server, user=user, password=password) as xlogin:
         launch_cs_command(
             command_name,
             project_id=project_id,
             session_id=session_id,
-            inputs=inputs,
+            inputs=inputs_dict,
             timeout=timeout,
             poll_interval=poll_interval,
             xlogin=xlogin,
@@ -246,7 +273,7 @@ def save_token(auth_file, server, user, password):
     os.chmod(auth_file, 0o600)
 
     click.echo(
-        f"Saved alias/token to XNAT connection token to '{server}' at '{str(auth_file)}', "
+        f"Saved alias/token for '{server}' XNAT in '{str(auth_file)}' file, "
         "please ensure the file is secure"
     )
 
