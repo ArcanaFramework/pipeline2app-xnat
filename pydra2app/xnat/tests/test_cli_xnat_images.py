@@ -163,25 +163,19 @@ def test_deploy_pipelines(
 
 def test_save_token(xnat_repository, work_dir, cli_runner):
 
-    config_path = work_dir / "config.yaml"
-    with open(config_path, "w") as f:
-        yaml.dump(
-            {
-                "server": xnat_repository.server,
-            },
-            f,
-        )
-
     auth_path = work_dir / "auth.json"
-    with open(auth_path, "w") as f:
-        json.dump(
-            {"alias": "admin", "secret": "admin"},
-            f,
-        )
 
     result = cli_runner(
         save_token,
-        [str(config_path), str(auth_path)],
+        [
+            str(auth_path),
+            "--server",
+            xnat_repository.server,
+            "--user",
+            "admin",
+            "--password",
+            "admin",
+        ],
     )
 
     assert result.exit_code == 0, show_cli_trace(result)
