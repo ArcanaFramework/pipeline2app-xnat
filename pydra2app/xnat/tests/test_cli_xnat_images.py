@@ -161,7 +161,6 @@ def test_deploy_pipelines(
     assert all(cmd in available_cmds for cmd in expected_commands)
 
 
-@pytest.mark.xfail(reason="didn't have time to get it to work")
 def test_save_token(xnat_repository, work_dir, cli_runner):
 
     auth_path = work_dir / "auth.json"
@@ -169,6 +168,7 @@ def test_save_token(xnat_repository, work_dir, cli_runner):
     result = cli_runner(
         save_token,
         [
+            "--auth-file",
             str(auth_path),
             "--server",
             xnat_repository.server,

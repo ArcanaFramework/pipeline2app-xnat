@@ -43,12 +43,14 @@ class XnatCommand(ContainerCommand):
 
         xnat_input_args = self.add_inputs_from_xnat(cmd_json)
 
-        cmd_json["command-line"] = (
-            self.activate_conda_cmd()
-            + "pydra2app ext xnat cs-entrypoint xnat-cs//[PROJECT_ID] "
-            + " ".join(
-                input_args + output_args + param_args + xnat_input_args + [flag_arg]
-            )
+        cmd_json["command-line"] = " ".join(
+            self.image.activate_conda()
+            + ["pydra2app", "ext", "xnat", "cs-entrypoint", "xnat-cs//[PROJECT_ID]"]
+            + input_args
+            + output_args
+            + param_args
+            + xnat_input_args
+            + [flag_arg]
         )
 
         return cmd_json
@@ -192,7 +194,10 @@ class XnatCommand(ContainerCommand):
                     "via-wrapup-command": None,
                     "as-a-child-of": "SESSION",
                     "type": "Resource",
-                    "label": output.name,  # Shame that this is fixed, would be good to append the "dataset_name" to it as we do in the API put. Might be worth just dropping XNAT outputs and just using API
+                    # Shame that the "label" output is fixed, would be good to append
+                    # the "dataset_name" to it as we do in the API put. Might be worth
+                    # just dropping XNAT outputs and just using API
+                    "label": output.name,
                     "format": output.datatype.mime_like,
                 }
             )
