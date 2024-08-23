@@ -1,6 +1,6 @@
 from frametree.core.utils import show_cli_trace
-from pydra2app.core.cli import make
-from pydra2app.xnat.cli import save_token, install_command, launch_command
+from pipeline2app.core.cli import make
+from pipeline2app.xnat.cli import save_token, install_command, launch_command
 
 
 def test_make(cli_runner):

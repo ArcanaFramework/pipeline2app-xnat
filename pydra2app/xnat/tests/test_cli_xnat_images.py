@@ -6,8 +6,8 @@ from unittest.mock import patch
 import pytest
 import docker
 import xnat
-from pydra2app.core.cli import make
-from pydra2app.xnat.cli.release import (
+from pipeline2app.core.cli import make
+from pipeline2app.xnat.cli.release import (
     deploy_pipelines,
     save_token,
     XNAT_HOST_KEY,
@@ -36,7 +36,7 @@ def test_deploy_pipelines(
     WRAPPER_VERSION = "1-pullimages"
 
     reverse_command_spec = copy(command_spec)
-    reverse_command_spec["task"] = "pydra2app.testing.tasks:concatenate_reverse"
+    reverse_command_spec["task"] = "pipeline2app.testing.tasks:concatenate_reverse"
 
     spec_dir = work_dir / DOCKER_ORG
     pkg_path = spec_dir / IMAGE_GROUP_NAME

@@ -7,9 +7,9 @@ from conftest import (
     FileBP,
     access_dataset,
 )
-from pydra2app.xnat.image import XnatApp
-from pydra2app.xnat.command import XnatCommand
-from pydra2app.xnat.deploy import (
+from pipeline2app.xnat.image import XnatApp
+from pipeline2app.xnat.command import XnatCommand
+from pipeline2app.xnat.deploy import (
     install_and_launch_xnat_cs_command,
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
@@ -32,7 +32,7 @@ def run_spec(
     spec = {}
     if request.param == "func":
         spec["build"] = {
-            "org": "pydra2app-tests",
+            "org": "pipeline2app-tests",
             "name": "concatenate-xnat-cs",
             "version": {
                 "package": "1.0",
@@ -48,8 +48,8 @@ def run_spec(
             "packages": {
                 "system": ["git", "vim"],
                 "pip": [
-                    "pydra2app",
-                    "pydra2app-xnat",
+                    "pipeline2app",
+                    "pipeline2app-xnat",
                     "fileformats",
                     "fileformats-medimage",
                     "pydra",
@@ -69,7 +69,7 @@ def run_spec(
     elif request.param == "bids_app":
         bids_command_spec["configuration"]["executable"] = "/launch.sh"
         spec["build"] = {
-            "org": "pydra2app-tests",
+            "org": "pipeline2app-tests",
             "name": "bids-app-xnat-cs",
             "version": {
                 "package": "1.0",
@@ -88,8 +88,8 @@ def run_spec(
                     "frametree-bids",
                     "frametree-xnat",
                     "pydra",
-                    "pydra2app",
-                    "pydra2app-xnat",
+                    "pipeline2app",
+                    "pipeline2app-xnat",
                 ],
             },
             "command": bids_command_spec,
@@ -174,7 +174,7 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
     image_spec.make(
         build_dir=work_dir,
-        pydra2app_install_extras=["test"],
+        pipeline2app_install_extras=["test"],
         use_local_packages=True,
         for_localhost=True,
     )

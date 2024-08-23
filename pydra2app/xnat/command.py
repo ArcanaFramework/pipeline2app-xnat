@@ -3,7 +3,7 @@ import typing as ty
 import re
 import attrs
 from fileformats.core import FileSet, to_mime
-from pydra2app.core.command.base import ContainerCommand
+from pipeline2app.core.command.base import ContainerCommand
 from frametree.xnat import XnatViaCS
 from frametree.common import Clinical
 
@@ -16,8 +16,8 @@ class XnatCommand(ContainerCommand):
 
     image: ty.Optional[XnatApp] = None
 
-    # Hard-code the data_space of XNAT commands to be clinical
-    DATA_SPACE = Clinical
+    # Hard-code the axes of XNAT commands to be clinical
+    AXES = Clinical
 
     def make_json(self):
         """Constructs the XNAT CS "command" JSON config, which specifies how XNAT
@@ -39,13 +39,13 @@ class XnatCommand(ContainerCommand):
 
         output_args = self.add_output_fields(cmd_json)
 
-        flag_arg = self.add_pydra2app_flags_field(cmd_json)
+        flag_arg = self.add_pipeline2app_flags_field(cmd_json)
 
         xnat_input_args = self.add_inputs_from_xnat(cmd_json)
 
         cmd_json["command-line"] = " ".join(
             self.image.activate_conda()
-            + ["pydra2app", "ext", "xnat", "cs-entrypoint", "xnat-cs//[PROJECT_ID]"]
+            + ["pipeline2app", "ext", "xnat", "cs-entrypoint", "xnat-cs//[PROJECT_ID]"]
             + input_args
             + output_args
             + param_args
@@ -205,14 +205,14 @@ class XnatCommand(ContainerCommand):
 
         return cmd_args
 
-    def add_pydra2app_flags_field(self, cmd_json):
+    def add_pipeline2app_flags_field(self, cmd_json):
 
         # Add input for dataset name
         FLAGS_KEY = "#PYDRA2APP_FLAGS#"
         cmd_json["inputs"].append(
             {
                 "name": "Pydra2App_flags",
-                "description": "Flags passed to `run-pydra2app-pipeline` command",
+                "description": "Flags passed to `run-pipeline2app-pipeline` command",
                 "type": "string",
                 "default-value": (
                     "--plugin serial "
@@ -342,4 +342,4 @@ class XnatCommand(ContainerCommand):
         return re.sub(r"[^a-zA-Z0-9_]+", "_", path)
 
     COMMAND_INPUT_TYPES = {bool: "bool", str: "string", int: "number", float: "number"}
-    VALID_FREQUENCIES = (Clinical.session, Clinical.dataset)
+    VALID_FREQUENCIES = (Clinical.session, Clinical.constant)
