@@ -22,4 +22,4 @@ __pycache__
 ~*
 /test-data/dicom-dataset
 *.venv
-/pydra2app/xnat/_version.py
+/pipeline2app/xnat/_version.py

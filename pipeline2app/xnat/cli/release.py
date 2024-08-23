@@ -17,7 +17,7 @@ XNAT_HOST_KEY = "XNAT_HOST"
 XNAT_USER_KEY = "XNAT_USER"
 XNAT_PASS_KEY = "XNAT_PASS"
 XNAT_AUTH_FILE_KEY = "XNAT_AUTH_FILE"
-XNAT_AUTH_FILE_DEFAULT = Path("~/.pydra2app_xnat_user_token.json").expanduser()
+XNAT_AUTH_FILE_DEFAULT = Path("~/.pipeline2app_xnat_user_token.json").expanduser()
 
 
 def load_auth(server, user, password, auth_file):
@@ -30,7 +30,7 @@ def load_auth(server, user, password, auth_file):
         if auth_file == XNAT_AUTH_FILE_DEFAULT and not Path(auth_file).exists():
             raise RuntimeError(
                 "An auth file must be provided if no server is. "
-                "Use pydra2app ext xnat save-token to create one"
+                "Use pipeline2app ext xnat save-token to create one"
             )
         click.echo(f"Reading existing alias/token pair from '{str(auth_file)}")
         with open(auth_file) as fp:
@@ -284,7 +284,7 @@ def save_token(auth_file, server, user, password):
 JSON file using the XNAT instance's REST API.
 
 MANIFEST_FILE is a JSON file containing a list of container images built in a release
-created by `pydra2app deploy xnat build`
+created by `pipeline2app deploy xnat build`
 
 Authentication credentials can be passed through the {XNAT_USER_KEY}
 and {XNAT_PASS_KEY} environment variables. Otherwise, tokens can be saved
