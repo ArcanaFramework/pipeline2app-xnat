@@ -208,10 +208,10 @@ class XnatCommand(ContainerCommand):
     def add_pipeline2app_flags_field(self, cmd_json):
 
         # Add input for dataset name
-        FLAGS_KEY = "#PYDRA2APP_FLAGS#"
+        FLAGS_KEY = "#PIPELINE2APP_FLAGS#"
         cmd_json["inputs"].append(
             {
-                "name": "Pydra2App_flags",
+                "name": "Pipeline2app_flags",
                 "description": "Flags passed to `run-pipeline2app-pipeline` command",
                 "type": "string",
                 "default-value": (

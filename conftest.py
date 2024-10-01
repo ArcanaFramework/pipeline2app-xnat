@@ -64,7 +64,7 @@ PKG_DIR = Path(__file__).parent
 
 log_level = logging.WARNING
 
-logger = logging.getLogger("arcana")
+logger = logging.getLogger("pipeline2app")
 logger.setLevel(log_level)
 
 sch = logging.StreamHandler()
@@ -73,7 +73,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 sch.setFormatter(formatter)
 logger.addHandler(sch)
 
-logger = logging.getLogger("arcana")
+logger = logging.getLogger("pipeline2app")
 logger.setLevel(log_level)
 
 sch = logging.StreamHandler()
@@ -116,10 +116,10 @@ def pkg_dir():
 
 
 @pytest.fixture
-def arcana_home(work_dir):
-    arcana_home = work_dir / "arcana-home"
-    with patch.dict(os.environ, {"PYDRA2APP_HOME": str(arcana_home)}):
-        yield arcana_home
+def pipeline2app_home(work_dir):
+    pipeline2app_home = work_dir / "pipeline2app-home"
+    with patch.dict(os.environ, {"PIPELINE2APP_HOME": str(pipeline2app_home)}):
+        yield pipeline2app_home
 
 
 # -----------------------
@@ -541,8 +541,8 @@ def command_spec():
 
 BIDS_VALIDATOR_DOCKER = "bids/validator:latest"
 SUCCESS_STR = "This dataset appears to be BIDS compatible"
-MOCK_BIDS_APP_IMAGE = "arcana-mock-bids-app"
-BIDS_VALIDATOR_APP_IMAGE = "arcana-bids-validator-app"
+MOCK_BIDS_APP_IMAGE = "pipeline2app-mock-bids-app"
+BIDS_VALIDATOR_APP_IMAGE = "pipeline2app-bids-validator-app"
 
 
 @pytest.fixture(scope="session")

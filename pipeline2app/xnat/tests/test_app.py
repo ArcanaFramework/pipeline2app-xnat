@@ -37,7 +37,7 @@ def run_spec(
             "version": {
                 "package": "1.0",
             },
-            "title": "A pipeline to test Pydra2App's deployment tool",
+            "title": "A pipeline to test Pipeline2app's deployment tool",
             "command": command_spec,
             "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
             "docs": {

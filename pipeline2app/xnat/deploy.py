@@ -3,13 +3,13 @@ import time
 import logging
 import json
 import xnat
-from pipeline2app.core.exceptions import Pydra2AppError
+from pipeline2app.core.exceptions import Pipeline2appError
 from pipeline2app.core.utils import extract_file_from_docker_image
 
 
 logger = logging.getLogger("pipeline2app-xnat")
 
-INTERNAL_INPUTS = ("Pydra2App_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
+INTERNAL_INPUTS = ("Pipeline2app_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
 
 
 def install_cs_command(
@@ -164,7 +164,7 @@ def launch_cs_command(
     unexpected_inputs = list(set(provided_inputs) - set(input_names))
     if missing_inputs or unexpected_inputs:
         raise ValueError(
-            f"Error launching '{cmd_name}' command:\n"
+            f"Error launching '{cmd_name}' command:\n"  # noqa
             f"    Valid inputs: {input_names}\n"
             f"    Provided inputs: {provided_inputs}\n"
             f"    Missing required inputs: {missing_inputs}\n"
@@ -179,7 +179,7 @@ def launch_cs_command(
     ).json()
 
     if launch_result["status"] != "success":
-        raise Pydra2AppError(
+        raise Pipeline2appError(
             f"{cmd_name} workflow wasn't launched successfully ({launch_result['status']})"
         )
     workflow_id = launch_result["workflow-id"]
@@ -210,13 +210,13 @@ def launch_cs_command(
         f"/xapi/containers/{container_id}/logs/stdout", accepted_status=[200, 204]
     )
     if stdout_result.status_code == 200:
-        out_str = f"stdout:\n{stdout_result.content.decode('utf-8')}\n"
+        out_str = f"stdout:\n{stdout_result.content.decode('utf-8')}\n"  # noqa
 
     stderr_result = xlogin.get(
         f"/xapi/containers/{container_id}/logs/stderr", accepted_status=[200, 204]
     )
     if stderr_result.status_code == 200:
-        out_str += f"\nstderr:\n{stderr_result.content.decode('utf-8')}"
+        out_str += f"\nstderr:\n{stderr_result.content.decode('utf-8')}"  # noqa
 
     if i == num_attempts - 1:
         status = f"NotCompletedAfter{max_runtime}Seconds"
