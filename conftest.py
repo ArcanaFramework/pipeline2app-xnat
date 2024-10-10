@@ -115,11 +115,11 @@ def pkg_dir():
     return PKG_DIR
 
 
-@pytest.fixture
-def pipeline2app_home(work_dir):
-    pipeline2app_home = work_dir / "pipeline2app-home"
-    with patch.dict(os.environ, {"PIPELINE2APP_HOME": str(pipeline2app_home)}):
-        yield pipeline2app_home
+@pytest.fixture(scope="session")
+def frametree_home():
+    frametree_home = Path(tempfile.mkdtemp()) / "frametree-home"
+    with patch.dict(os.environ, {"FRAMETREE_HOME": str(frametree_home)}):
+        yield frametree_home
 
 
 # -----------------------
@@ -357,7 +357,9 @@ def dataset(
         source_data=source_data,
         name="",
     )
-    return access_dataset(project_id, access_method, xnat_repository, xnat_archive_dir)
+    return access_dataset(
+        project_id, access_method, xnat_repository, xnat_archive_dir, run_prefix
+    )
 
 
 @pytest.fixture
@@ -380,6 +382,7 @@ def access_dataset(
     access_method: str,
     xnat_repository: Xnat,
     xnat_archive_dir: Path,
+    run_prefix: str,
 ) -> FrameSet:
     if access_method == "cs":
         proj_dir = xnat_archive_dir / project_id / "arc001"
@@ -392,6 +395,7 @@ def access_dataset(
             input_mount=proj_dir,
             output_mount=Path(mkdtemp()),
         )
+        store.save(name=f"testxnatcs{run_prefix}")
     elif access_method == "api":
         store = xnat_repository
     else:
@@ -416,7 +420,7 @@ def xnat_archive_dir(xnat_root_dir):
 
 
 @pytest.fixture(scope="session")
-def xnat_repository(run_prefix, xnat4tests_config):
+def xnat_repository(run_prefix, xnat4tests_config, frametree_home):
 
     xnat4tests.start_xnat()
 
@@ -426,6 +430,8 @@ def xnat_repository(run_prefix, xnat4tests_config):
         password=xnat4tests_config.xnat_password,
         cache_dir=mkdtemp(),
     )
+
+    repository.save(name="testxnat")
 
     # Stash a project prefix in the repository object
     repository.__annotations__["run_prefix"] = run_prefix
@@ -434,7 +440,7 @@ def xnat_repository(run_prefix, xnat4tests_config):
 
 
 @pytest.fixture(scope="session")
-def xnat_via_cs_repository(run_prefix, xnat4tests_config):
+def xnat_via_cs_repository(run_prefix, xnat4tests_config, frametree_home):
 
     xnat4tests.start_xnat()
 
@@ -444,6 +450,8 @@ def xnat_via_cs_repository(run_prefix, xnat4tests_config):
         password=xnat4tests_config.xnat_password,
         cache_dir=mkdtemp(),
     )
+
+    repository.save(name="testxnatcs")
 
     # Stash a project prefix in the repository object
     repository.__annotations__["run_prefix"] = run_prefix
@@ -520,14 +528,14 @@ def command_spec():
             },
         },
         "outputs": {
-            "concatenated": {
+            "concatenated_file": {
                 "datatype": "text/text-file",
                 "field": "out_file",
                 "help": "an output file",
             }
         },
         "parameters": {
-            "duplicates": {
+            "number_of_duplicates": {
                 "field": "duplicates",
                 "default": 2,
                 "datatype": "int",
@@ -535,7 +543,7 @@ def command_spec():
                 "help": "a parameter",
             }
         },
-        "row_frequency": "session",
+        "row_frequency": "common:Clinical[session]",
     }
 
 

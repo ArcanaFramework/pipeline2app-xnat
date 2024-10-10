@@ -65,7 +65,7 @@ def run_spec(
         spec["dataset"] = access_dataset(
             project_id, "cs", xnat_repository, xnat_archive_dir
         )
-        spec["params"] = {"duplicates": 2}
+        spec["params"] = {"number_of_duplicates": 2}
     elif request.param == "bids_app":
         bids_command_spec["configuration"]["executable"] = "/launch.sh"
         spec["build"] = {
@@ -209,6 +209,10 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
         )
 
         assert status == "Complete", f"Workflow {workflow_id} failed.\n{out_str}"
+
+        assert sorted(r.label for r in test_xsession.resources.values()) == sorted(
+            deriv.path for deriv in blueprint.derivatives
+        )
 
         for deriv in blueprint.derivatives:
             assert [
