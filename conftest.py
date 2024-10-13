@@ -116,7 +116,7 @@ def pkg_dir():
 
 
 @pytest.fixture(scope="session")
-def frametree_home():
+def frametree_home() -> Path:
     frametree_home = Path(tempfile.mkdtemp()) / "frametree-home"
     with patch.dict(os.environ, {"FRAMETREE_HOME": str(frametree_home)}):
         yield frametree_home
@@ -330,7 +330,9 @@ def static_dataset(
         name="",
     )
     logger.debug("accessing dataset at %s", project_id)
-    return access_dataset(project_id, access_method, xnat_repository, xnat_archive_dir)
+    return access_dataset(
+        project_id, access_method, xnat_repository, xnat_archive_dir, run_prefix
+    )
 
 
 @pytest.fixture(params=MUTABLE_DATASETS, scope="function")

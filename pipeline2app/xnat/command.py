@@ -5,7 +5,9 @@ import attrs
 from fileformats.core import FileSet, to_mime
 from pipeline2app.core.command.base import ContainerCommand
 from frametree.xnat import XnatViaCS
+from frametree.xnat.api import path2label
 from frametree.common import Clinical
+
 
 if ty.TYPE_CHECKING:
     from .image import XnatApp
@@ -197,7 +199,7 @@ class XnatCommand(ContainerCommand):
                     # Shame that the "label" output is fixed, would be good to append
                     # the "dataset_name" to it as we do in the API put. Might be worth
                     # just dropping XNAT outputs and just using API
-                    "label": output.name,
+                    "label": path2label(output.name),
                     "format": output.datatype.mime_like,
                 }
             )
