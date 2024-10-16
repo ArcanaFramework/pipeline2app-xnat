@@ -13,12 +13,17 @@ from pipeline2app.xnat.deploy import (
     install_and_launch_xnat_cs_command,
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
+from fileformats.text import Plain as Text
+from frametree.common import Clinical
 
 
 PIPELINE_NAME = "test-concatenate"
 
 
-@pytest.fixture(params=["func", "bids_app"], scope="session")
+@pytest.fixture(
+    params=["func_api", "bidsapp_api", "func_internal", "bidsapp_internal"],
+    scope="session",
+)
 def run_spec(
     command_spec,
     bids_command_spec,
@@ -30,10 +35,14 @@ def run_spec(
     run_prefix,
 ):
     spec = {}
-    if request.param == "func":
+    task, upload_method = request.param.split("_")
+    run_prefix += upload_method
+    access_method = "cs" + ("_internal" if upload_method == "internal" else "")
+    if task == "func":
+        cmd_spec = command_spec
         spec["build"] = {
             "org": "pipeline2app-tests",
-            "name": "concatenate-xnat-cs",
+            "name": run_prefix + "-concatenate-xnat-cs",
             "version": {
                 "package": "1.0",
             },
@@ -52,6 +61,8 @@ def run_spec(
                     "pipeline2app-xnat",
                     "fileformats",
                     "fileformats-medimage",
+                    "frametree",
+                    "frametree-xnat",
                     "pydra",
                 ],
             },
@@ -63,14 +74,15 @@ def run_spec(
             dataset_id=project_id,
         )
         spec["dataset"] = access_dataset(
-            project_id, "cs", xnat_repository, xnat_archive_dir
+            project_id, access_method, xnat_repository, xnat_archive_dir, run_prefix
         )
         spec["params"] = {"number_of_duplicates": 2}
-    elif request.param == "bids_app":
+    elif task == "bidsapp":
         bids_command_spec["configuration"]["executable"] = "/launch.sh"
+        cmd_spec = bids_command_spec
         spec["build"] = {
             "org": "pipeline2app-tests",
-            "name": "bids-app-xnat-cs",
+            "name": run_prefix + "-bids-app-xnat-cs",
             "version": {
                 "package": "1.0",
             },
@@ -86,6 +98,7 @@ def run_spec(
                     "fileformats-medimage",
                     "fileformats-medimage-extras",
                     "frametree-bids",
+                    "frametree",
                     "frametree-xnat",
                     "pydra",
                     "pipeline2app",
@@ -141,19 +154,34 @@ def run_spec(
                     ],
                 ),
             ],
+            derivatives=[
+                FileBP(
+                    path="file1",
+                    row_frequency=Clinical.session,
+                    datatype=Text,
+                    filenames=["file1.txt"],
+                ),
+                FileBP(
+                    path="file2",
+                    row_frequency=Clinical.session,
+                    datatype=Text,
+                    filenames=["file2.txt"],
+                ),
+            ],
         )
-        project_id = run_prefix + "xnat_cs_bids_app"
+        project_id = run_prefix + "xnat_cs_bidsapp"
         blueprint.make_dataset(
             store=xnat_repository,
             dataset_id=project_id,
             source_data=nifti_sample_dir,
         )
         spec["dataset"] = access_dataset(
-            project_id, "cs", xnat_repository, xnat_archive_dir
+            project_id, access_method, xnat_repository, xnat_archive_dir, run_prefix
         )
         spec["params"] = {}
     else:
-        assert False, f"unrecognised request param '{request.param}'"
+        assert False, f"unrecognised request param '{task}'"
+    cmd_spec["internal_upload"] = upload_method == "internal"
     return spec
 
 
@@ -166,9 +194,6 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
     dataset = run_spec["dataset"]
     params = run_spec["params"]
     blueprint = dataset.__annotations__["blueprint"]
-
-    # Append run_prefix to command name to avoid clash with previous test runs
-    build_spec["name"] = "xnat-cs-test" + run_prefix
 
     image_spec = XnatApp(**build_spec)
 
@@ -194,6 +219,13 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
     for pname, pval in params.items():
         launch_inputs[pname] = pval
 
+    if image_spec.command.internal_upload:
+        # If using internal upload, the output names are fixed
+        output_values = {o: o for o in image_spec.command.output_names}
+    else:
+        output_values = {o: o + "_sink" for o in image_spec.command.output_names}
+        launch_inputs.update(output_values)
+
     with xnat_repository.connection:
 
         xlogin = xnat_repository.connection
@@ -210,11 +242,17 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
         assert status == "Complete", f"Workflow {workflow_id} failed.\n{out_str}"
 
+        access_type = "direct" if image_spec.command.internal_upload else "api"
+
+        assert f"via {access_type} access" in out_str.lower()
+
         assert sorted(r.label for r in test_xsession.resources.values()) == sorted(
-            deriv.path for deriv in blueprint.derivatives
+            output_values.values()
         )
 
-        for deriv in blueprint.derivatives:
-            assert [
-                Path(f).name for f in test_xsession.resources[deriv.path].files
-            ] == deriv.filenames
+        for output_name, sinked_name in output_values.items():
+            deriv = next(d for d in blueprint.derivatives if d.path == output_name)
+            assert sorted(
+                Path(f).name.lstrip("sub-DEFAULT_")
+                for f in test_xsession.resources[sinked_name].files
+            ) == sorted(deriv.filenames)

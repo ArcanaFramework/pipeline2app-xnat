@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 import json
+import typing as ty
 import attrs
 from neurodocker.reproenv import DockerRenderer
 from frametree.xnat import XnatViaCS
@@ -12,7 +13,7 @@ from .command import XnatCommand
 
 
 @attrs.define(kw_only=True)
-class XnatApp(App):
+class XnatApp(App):  # type: ignore[misc]
 
     PIP_DEPENDENCIES = (
         "pipeline2app-xnat",
@@ -21,7 +22,7 @@ class XnatApp(App):
     )
 
     command: XnatCommand = attrs.field(
-        converter=ObjectConverter(
+        converter=ObjectConverter(  # type: ignore[misc]
             XnatCommand
         )  # Change the command type to XnatCommand subclass
     )
@@ -30,8 +31,8 @@ class XnatApp(App):
         self,
         build_dir: Path,
         for_localhost: bool = False,
-        **kwargs,
-    ):
+        **kwargs: ty.Any,
+    ) -> DockerRenderer:
         """Creates a Docker image containing one or more XNAT commands ready
         to be installed in XNAT's container service plugin
 
@@ -74,10 +75,15 @@ class XnatApp(App):
 
         return dockerfile
 
-    def add_entrypoint(self, dockerfile: DockerRenderer, build_dir: Path):
+    def add_entrypoint(self, dockerfile: DockerRenderer, build_dir: Path) -> None:
         pass  # Don't need to add entrypoint as the command line is specified in the command JSON
 
-    def copy_command_ref(self, dockerfile: DockerRenderer, xnat_command, build_dir):
+    def copy_command_ref(
+        self,
+        dockerfile: DockerRenderer,
+        xnat_command: ty.Dict[str, ty.Any],
+        build_dir: Path,
+    ) -> None:
         """Copy the generated command JSON within the Docker image for future reference
 
         Parameters
@@ -97,8 +103,8 @@ class XnatApp(App):
         )
 
     def save_store_config(
-        self, dockerfile: DockerRenderer, build_dir: Path, for_localhost=False
-    ):
+        self, dockerfile: DockerRenderer, build_dir: Path, for_localhost: bool = False
+    ) -> None:
         """Save a configuration for a XnatViaCS store.
 
         Parameters

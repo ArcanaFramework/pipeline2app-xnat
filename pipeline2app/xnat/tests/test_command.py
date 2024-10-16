@@ -6,7 +6,7 @@ from pipeline2app.core import ContainerCommand
 from conftest import TEST_XNAT_DATASET_BLUEPRINTS, access_dataset
 
 
-@pytest.mark.parametrize("access_method", ["api", "cs"])
+@pytest.mark.parametrize("access_method", ["api", "cs", "cs-internal"])
 def test_command_execute(
     xnat_repository, command_spec, work_dir, run_prefix, access_method, xnat_archive_dir
 ):
@@ -41,7 +41,7 @@ def test_command_execute(
             ("second_file", "scan2"),
         ],
         output_values=[
-            ("sink_file", "concatenated_file"),
+            ("concatenated_file", "sink_file"),
         ],
         parameter_values=[
             ("number_of_duplicates", str(duplicates)),
@@ -54,7 +54,7 @@ def test_command_execute(
         pipeline_name="test_pipeline",
     )
     # Add source column to saved dataset
-    reloaded = dataset.store.load_frameset(dataset.id, name=dataset.name)
+    reloaded = dataset.reload()
     sink = reloaded["sink_file"]
     assert len(sink) == reduce(mul, bp.dim_lengths)
     fnames = ["file1.txt", "file2.txt"]
