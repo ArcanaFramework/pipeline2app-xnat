@@ -57,12 +57,14 @@ def run_spec(
             "packages": {
                 "system": ["git", "vim"],
                 "pip": [
-                    "pipeline2app",
-                    "pipeline2app-xnat",
                     "fileformats",
+                    "fileformats-extras",
                     "fileformats-medimage",
+                    "fileformats-medimage-extras",
                     "frametree",
                     "frametree-xnat",
+                    "pipeline2app",
+                    "pipeline2app-xnat",
                     "pydra",
                 ],
             },
@@ -95,10 +97,11 @@ def run_spec(
                 "system": ["git", "vim"],
                 "pip": [
                     "fileformats",
+                    "fileformats-extras",
                     "fileformats-medimage",
                     "fileformats-medimage-extras",
-                    "frametree-bids",
                     "frametree",
+                    "frametree-bids",
                     "frametree-xnat",
                     "pydra",
                     "pipeline2app",
@@ -252,7 +255,12 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
         for output_name, sinked_name in output_values.items():
             deriv = next(d for d in blueprint.derivatives if d.path == output_name)
-            assert sorted(
+            uploaded_files = sorted(
                 Path(f).name.lstrip("sub-DEFAULT_")
                 for f in test_xsession.resources[sinked_name].files
-            ) == sorted(deriv.filenames)
+            )
+            if image_spec.command.internal_upload:
+                reference = sorted(d.rstrip("_sink") + ".txt" for d in deriv.filenames)
+            else:
+                reference = sorted(deriv.filenames)
+            assert uploaded_files == reference
