@@ -284,6 +284,7 @@ INCOMPLETE_CS_STATES = (
     "Pending",
     "Running",
     "_Queued",
+    "Queued",
     "Staging",
     "Finalizing",
     "Created",
