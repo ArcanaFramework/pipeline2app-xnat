@@ -226,6 +226,9 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                 )
                 cmd_args.append(f"--output {output.name} '{replacement_key}'")
 
+        if self.internal_upload:
+            cmd_args.append("--internal-upload")
+
         return cmd_args
 
     def add_pipeline2app_flags_field(self, cmd_json: ty.Dict[str, ty.Any]) -> str:

@@ -18,7 +18,7 @@ def install_cs_command(
     enable: bool = False,
     projects_to_enable: ty.Sequence[str] = (),
     replace_existing: bool = False,
-):
+) -> None:
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
 
@@ -92,7 +92,7 @@ def launch_cs_command(
     xlogin: xnat.XNATSession,
     timeout: int = 1000,  # seconds
     poll_interval: int = 10,  # seconds
-):
+) -> ty.Tuple[int, str, str]:
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
 
@@ -227,13 +227,13 @@ def launch_cs_command(
 
 
 def install_and_launch_xnat_cs_command(
-    command_json: dict,
+    command_json: ty.Dict[str, ty.Any],
     project_id: str,
     session_id: str,
     inputs: ty.Dict[str, str],
     xlogin: xnat.XNATSession,
-    **kwargs,
-):
+    **kwargs: ty.Any,
+) -> ty.Tuple[int, str, str]:
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
 

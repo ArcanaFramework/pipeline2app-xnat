@@ -24,6 +24,15 @@ in the format <store-nickname>//<dataset-id>[@<dataset-name>]
 @entrypoint_opts.execution  # type: ignore[misc]
 @entrypoint_opts.debugging  # type: ignore[misc]
 @entrypoint_opts.dataset_config  # type: ignore[misc]
+@click.option(
+    "--internal-upload/--external-upload",
+    type=bool,
+    default=False,
+    help=(
+        "Whether to upload the output to the XNAT using the container service's "
+        "internal upload mechanism instead of the XNAT REST API"
+    ),
+)
 def cs_entrypoint(
     address: str,
     spec_path: Path,
