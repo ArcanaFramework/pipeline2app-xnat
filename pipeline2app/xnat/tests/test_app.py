@@ -260,7 +260,9 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
                 for f in test_xsession.resources[sinked_name].files
             )
             if image_spec.command.internal_upload:
-                reference = sorted(d.rstrip("_sink") + ".txt" for d in deriv.filenames)
+                reference = sorted(
+                    d.rstrip("_sink.txt") + ".txt" for d in deriv.filenames
+                )
             else:
                 reference = sorted(deriv.filenames)
             assert uploaded_files == reference

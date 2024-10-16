@@ -2,7 +2,7 @@ from operator import mul
 from functools import reduce
 import random
 import pytest
-from pipeline2app.core import ContainerCommand
+from pipeline2app.xnat import XnatCommand
 from conftest import TEST_XNAT_DATASET_BLUEPRINTS, access_dataset
 
 
@@ -30,7 +30,7 @@ def test_command_execute(
     )
     dataset.save()
 
-    command = ContainerCommand(**command_spec)
+    command = XnatCommand(**command_spec)
 
     # Start generating the arguments for the CLI
     # Add source to loaded dataset
