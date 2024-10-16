@@ -392,7 +392,7 @@ def access_dataset(
     run_prefix: str,
 ) -> FrameSet:
     if access_method.startswith("cs"):
-        proj_dir = xnat_archive_dir / project_id / "arc001"
+        proj_dir = xnat_archive_dir / project_id
         store = XnatViaCS(
             server=xnat_repository.server,
             user=xnat_repository.user,
