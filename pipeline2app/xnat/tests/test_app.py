@@ -159,13 +159,13 @@ def run_spec(
                     path="file1",
                     row_frequency=Clinical.session,
                     datatype=Text,
-                    filenames=["file1.txt"],
+                    filenames=["file1_sink.txt"],
                 ),
                 FileBP(
                     path="file2",
                     row_frequency=Clinical.session,
                     datatype=Text,
-                    filenames=["file2.txt"],
+                    filenames=["file2_sink.txt"],
                 ),
             ],
         )

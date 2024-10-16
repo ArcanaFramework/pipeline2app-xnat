@@ -300,7 +300,7 @@ TEST_XNAT_DATASET_BLUEPRINTS = {
                 path="concatenated_file",
                 row_frequency=Clinical.session,
                 datatype=Text,
-                filenames=["concatenated.txt"],
+                filenames=["concatenated_file_sink.txt"],
             )
         ],
     ),
