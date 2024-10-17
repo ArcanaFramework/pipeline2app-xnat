@@ -5,21 +5,25 @@ import attrs
 from fileformats.core import FileSet, to_mime
 from pipeline2app.core.command.base import ContainerCommand
 from frametree.xnat import XnatViaCS
+from frametree.core.axes import Axes
+from frametree.core.utils import path2label
 from frametree.common import Clinical
+
 
 if ty.TYPE_CHECKING:
     from .image import XnatApp
 
 
-@attrs.define(kw_only=True)
-class XnatCommand(ContainerCommand):
+@attrs.define(kw_only=True, auto_attribs=False)
+class XnatCommand(ContainerCommand):  # type: ignore[misc]
 
-    image: ty.Optional[XnatApp] = None
+    image: ty.Optional[XnatApp] = attrs.field(default=None)
+    internal_upload: bool = attrs.field(default=False)
 
     # Hard-code the axes of XNAT commands to be clinical
-    AXES = Clinical
+    AXES: ty.Optional[ty.Type[Axes]] = Clinical
 
-    def make_json(self):
+    def make_json(self) -> ty.Dict[str, ty.Any]:
         """Constructs the XNAT CS "command" JSON config, which specifies how XNAT
         should handle the containerised pipeline
 
@@ -55,7 +59,7 @@ class XnatCommand(ContainerCommand):
 
         return cmd_json
 
-    def init_command_json(self):
+    def init_command_json(self) -> ty.Dict[str, ty.Any]:
         """Initialises the command JSON that specifies to the XNAT Cs how the command
         should be run
 
@@ -101,7 +105,7 @@ class XnatCommand(ContainerCommand):
 
         return cmd_json
 
-    def add_input_fields(self, cmd_json):
+    def add_input_fields(self, cmd_json: ty.Dict[str, ty.Any]) -> ty.List[str]:
         """Adds pipeline inputs to the command JSON
 
         Parameters
@@ -144,7 +148,7 @@ class XnatCommand(ContainerCommand):
 
         return cmd_args
 
-    def add_parameter_fields(self, cmd_json):
+    def add_parameter_fields(self, cmd_json: ty.Dict[str, ty.Any]) -> ty.List[str]:
 
         # Add parameters as additional inputs to inputs JSON specification
         cmd_args = []
@@ -168,7 +172,7 @@ class XnatCommand(ContainerCommand):
 
         return cmd_args
 
-    def add_output_fields(self, cmd_json):
+    def add_output_fields(self, cmd_json: ty.Dict[str, ty.Any]) -> ty.List[str]:
 
         # Set up output handlers and arguments
         cmd_args = []
@@ -176,42 +180,64 @@ class XnatCommand(ContainerCommand):
             out_fname = output.name + (
                 output.datatype.ext if output.datatype.ext else ""
             )
+
+            desc = (
+                f"Output ({to_mime(output.datatype, official=False)}): " + output.help
+            )
             # Set the path to the
-            cmd_json["outputs"].append(
-                {
-                    "name": output.name,
-                    "description": f"{output.field} ({to_mime(output.datatype)})",
-                    "required": True,
-                    "mount": "out",
-                    "path": out_fname,
-                    "glob": None,
-                }
-            )
-            cmd_json["xnat"][0]["output-handlers"].append(
-                {
-                    "name": f"{output.name}-resource",
-                    "accepts-command-output": output.name,
-                    "via-wrapup-command": None,
-                    "as-a-child-of": "SESSION",
-                    "type": "Resource",
-                    # Shame that the "label" output is fixed, would be good to append
-                    # the "dataset_name" to it as we do in the API put. Might be worth
-                    # just dropping XNAT outputs and just using API
-                    "label": output.name,
-                    "format": output.datatype.mime_like,
-                }
-            )
-            cmd_args.append(f"--output {output.name} '{output.name}'")
+            if self.internal_upload:
+                cmd_json["outputs"].append(
+                    {
+                        "name": output.name,
+                        "description": desc,
+                        "required": True,
+                        "mount": "out",
+                        "path": out_fname,
+                        "glob": None,
+                    }
+                )
+                cmd_json["xnat"][0]["output-handlers"].append(
+                    {
+                        "name": f"{output.name}-resource",
+                        "accepts-command-output": output.name,
+                        "via-wrapup-command": None,
+                        "as-a-child-of": "SESSION",
+                        "type": "Resource",
+                        # Shame that the "label" output is fixed, would be good to append
+                        # the "dataset_name" to it as we do in the API put. Might be worth
+                        # just dropping XNAT outputs and just using API
+                        "label": path2label(output.name),
+                        "format": output.datatype.mime_like,
+                    }
+                )
+                cmd_args.append(f"--output {output.name} '{output.name}'")
+            else:
+                replacement_key = f"[{output.field.upper()}_OUTPUT]"
+                cmd_json["inputs"].append(
+                    {
+                        "name": output.name,
+                        "description": desc,
+                        "type": self.COMMAND_INPUT_TYPES.get(output.datatype, "string"),
+                        "default-value": output.name,
+                        "required": False,
+                        "user-settable": True,
+                        "replacement-key": replacement_key,
+                    }
+                )
+                cmd_args.append(f"--output {output.name} '{replacement_key}'")
+
+        if self.internal_upload:
+            cmd_args.append("--internal-upload")
 
         return cmd_args
 
-    def add_pipeline2app_flags_field(self, cmd_json):
+    def add_pipeline2app_flags_field(self, cmd_json: ty.Dict[str, ty.Any]) -> str:
 
         # Add input for dataset name
-        FLAGS_KEY = "#PYDRA2APP_FLAGS#"
+        FLAGS_KEY = "#PIPELINE2APP_FLAGS#"
         cmd_json["inputs"].append(
             {
-                "name": "Pydra2App_flags",
+                "name": "Pipeline2app_flags",
                 "description": "Flags passed to `run-pipeline2app-pipeline` command",
                 "type": "string",
                 "default-value": (
@@ -229,7 +255,7 @@ class XnatCommand(ContainerCommand):
 
         return FLAGS_KEY
 
-    def add_inputs_from_xnat(self, cmd_json):
+    def add_inputs_from_xnat(self, cmd_json: ty.Dict[str, ty.Any]) -> ty.List[str]:
 
         # Define the fixed subject>session dataset hierarchy of XNAT, i.e. the data
         # tree contains two levels, one for subjects and the other for sessions
@@ -338,7 +364,7 @@ class XnatCommand(ContainerCommand):
         return cmd_args
 
     @classmethod
-    def path2xnatname(cls, path):
+    def path2xnatname(cls, path: str) -> str:
         return re.sub(r"[^a-zA-Z0-9_]+", "_", path)
 
     COMMAND_INPUT_TYPES = {bool: "bool", str: "string", int: "number", float: "number"}

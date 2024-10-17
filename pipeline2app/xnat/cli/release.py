@@ -45,7 +45,7 @@ def load_auth(server, user, password, auth_file):
     name="install-command",
     help="""Installs a container service pipelines command on an XNAT server
 
-IMAGE_OR_COMMAND_FILE the name of the Pydra2App container service pipeline Docker image or
+IMAGE_OR_COMMAND_FILE the name of the Pipeline2app container service pipeline Docker image or
 the path to a command JSON file to install
 """,
 )
@@ -298,7 +298,7 @@ Which of available pipelines to install can be controlled by a YAML file passed 
     - tag: ghcr.io/Australian-Imaging-Service/pet.rodent.*
     exclude:
     - tag: ghcr.io/Australian-Imaging-Service/mri.human.neuro.bidsapps.
-""",
+""",  # noqa
 )
 @click.argument("manifest_file", type=click.File())
 @click.option(
@@ -369,7 +369,7 @@ def deploy_pipelines(manifest_file, server, user, password, auth_file, filters_f
             if matches_entry(entry, filters.get("include")) and not matches_entry(
                 entry, filters.get("exclude"), default=False
             ):
-                tag = f"{entry['name']}:{entry['version']}"
+                tag = f"{entry['name']}:{entry['version']}"  # noqa
                 xlogin.post(
                     "/xapi/docker/pull", query={"image": tag, "save-commands": True}
                 )

@@ -1,4 +1,6 @@
 import click
+from pathlib import Path
+import typing as ty
 from pipeline2app.core.command import entrypoint_opts
 from pipeline2app.xnat import XnatApp
 from .base import xnat_group
@@ -15,18 +17,27 @@ dataset (e.g. XNAT project ID or file-system directory) and the dataset's name
 in the format <store-nickname>//<dataset-id>[@<dataset-name>]
 
 """,
-)
+)  # type: ignore[misc]
 @click.argument("address")
-@entrypoint_opts.data_columns
-@entrypoint_opts.parameterisation
-@entrypoint_opts.execution
-@entrypoint_opts.debugging
-@entrypoint_opts.dataset_config
+@entrypoint_opts.data_columns  # type: ignore[misc]
+@entrypoint_opts.parameterisation  # type: ignore[misc]
+@entrypoint_opts.execution  # type: ignore[misc]
+@entrypoint_opts.debugging  # type: ignore[misc]
+@entrypoint_opts.dataset_config  # type: ignore[misc]
+@click.option(
+    "--internal-upload/--external-upload",
+    type=bool,
+    default=False,
+    help=(
+        "Whether to upload the output to the XNAT using the container service's "
+        "internal upload mechanism instead of the XNAT REST API"
+    ),
+)
 def cs_entrypoint(
-    address,
-    spec_path,
-    **kwargs,
-):
+    address: str,
+    spec_path: Path,
+    **kwargs: ty.Any,
+) -> None:
 
     image_spec = XnatApp.load(spec_path)
 

@@ -3,13 +3,13 @@ import time
 import logging
 import json
 import xnat
-from pipeline2app.core.exceptions import Pydra2AppError
+from pipeline2app.core.exceptions import Pipeline2appError
 from pipeline2app.core.utils import extract_file_from_docker_image
 
 
 logger = logging.getLogger("pipeline2app-xnat")
 
-INTERNAL_INPUTS = ("Pydra2App_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
+INTERNAL_INPUTS = ("Pipeline2app_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
 
 
 def install_cs_command(
@@ -18,7 +18,7 @@ def install_cs_command(
     enable: bool = False,
     projects_to_enable: ty.Sequence[str] = (),
     replace_existing: bool = False,
-):
+) -> None:
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
 
@@ -92,7 +92,7 @@ def launch_cs_command(
     xlogin: xnat.XNATSession,
     timeout: int = 1000,  # seconds
     poll_interval: int = 10,  # seconds
-):
+) -> ty.Tuple[int, str, str]:
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
 
@@ -164,7 +164,7 @@ def launch_cs_command(
     unexpected_inputs = list(set(provided_inputs) - set(input_names))
     if missing_inputs or unexpected_inputs:
         raise ValueError(
-            f"Error launching '{cmd_name}' command:\n"
+            f"Error launching '{cmd_name}' command:\n"  # noqa
             f"    Valid inputs: {input_names}\n"
             f"    Provided inputs: {provided_inputs}\n"
             f"    Missing required inputs: {missing_inputs}\n"
@@ -179,7 +179,7 @@ def launch_cs_command(
     ).json()
 
     if launch_result["status"] != "success":
-        raise Pydra2AppError(
+        raise Pipeline2appError(
             f"{cmd_name} workflow wasn't launched successfully ({launch_result['status']})"
         )
     workflow_id = launch_result["workflow-id"]
@@ -210,13 +210,13 @@ def launch_cs_command(
         f"/xapi/containers/{container_id}/logs/stdout", accepted_status=[200, 204]
     )
     if stdout_result.status_code == 200:
-        out_str = f"stdout:\n{stdout_result.content.decode('utf-8')}\n"
+        out_str = f"stdout:\n{stdout_result.content.decode('utf-8')}\n"  # noqa
 
     stderr_result = xlogin.get(
         f"/xapi/containers/{container_id}/logs/stderr", accepted_status=[200, 204]
     )
     if stderr_result.status_code == 200:
-        out_str += f"\nstderr:\n{stderr_result.content.decode('utf-8')}"
+        out_str += f"\nstderr:\n{stderr_result.content.decode('utf-8')}"  # noqa
 
     if i == num_attempts - 1:
         status = f"NotCompletedAfter{max_runtime}Seconds"
@@ -227,13 +227,13 @@ def launch_cs_command(
 
 
 def install_and_launch_xnat_cs_command(
-    command_json: dict,
+    command_json: ty.Dict[str, ty.Any],
     project_id: str,
     session_id: str,
     inputs: ty.Dict[str, str],
     xlogin: xnat.XNATSession,
-    **kwargs,
-):
+    **kwargs: ty.Any,
+) -> ty.Tuple[int, str, str]:
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
 
@@ -284,6 +284,7 @@ INCOMPLETE_CS_STATES = (
     "Pending",
     "Running",
     "_Queued",
+    "Queued",
     "Staging",
     "Finalizing",
     "Created",
