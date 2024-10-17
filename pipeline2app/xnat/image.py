@@ -6,7 +6,7 @@ import typing as ty
 import attrs
 from neurodocker.reproenv import DockerRenderer
 from frametree.xnat import XnatViaCS
-from frametree.core.serialize import ClassResolver, ObjectConverter
+from frametree.core.serialize import ClassResolver, ObjectListConverter
 from frametree.core.store import Store
 from pipeline2app.core.image import App
 from .command import XnatCommand
@@ -21,8 +21,8 @@ class XnatApp(App):  # type: ignore[misc]
         "fileformats-medimage-extras",
     )
 
-    command: XnatCommand = attrs.field(
-        converter=ObjectConverter(  # type: ignore[misc]
+    commands: ty.List[XnatCommand] = attrs.field(
+        converter=ObjectListConverter(  # type: ignore[misc]
             XnatCommand
         )  # Change the command type to XnatCommand subclass
     )
@@ -60,7 +60,7 @@ class XnatApp(App):  # type: ignore[misc]
         xnat_command = self.command.make_json()
 
         # Copy the generated XNAT commands inside the container for ease of reference
-        self.copy_command_ref(dockerfile, xnat_command, build_dir)
+        self.copy_command_refs(dockerfile, xnat_command, build_dir)
 
         self.save_store_config(dockerfile, build_dir, for_localhost=for_localhost)
 
@@ -78,7 +78,7 @@ class XnatApp(App):  # type: ignore[misc]
     def add_entrypoint(self, dockerfile: DockerRenderer, build_dir: Path) -> None:
         pass  # Don't need to add entrypoint as the command line is specified in the command JSON
 
-    def copy_command_ref(
+    def copy_command_refs(
         self,
         dockerfile: DockerRenderer,
         xnat_command: ty.Dict[str, ty.Any],
@@ -95,12 +95,15 @@ class XnatApp(App):  # type: ignore[misc]
         build_dir : Path
             path to build directory
         """
-        # Copy command JSON inside dockerfile for ease of reference
-        with open(build_dir / "xnat_command.json", "w") as f:
-            json.dump(xnat_command, f, indent="    ")
-        dockerfile.copy(
-            source=["./xnat_command.json"], destination="/xnat_command.json"
-        )
+        command_jsons_dir = build_dir / "xnat_commands"
+        command_jsons_dir.mkdir(parents=True, exist_ok=True)
+        for command in self.commands:
+            with open(command_jsons_dir / command.name + ".json", "w") as f:
+                json.dump(xnat_command, f, indent="    ")
+            dockerfile.copy(
+                source=["./xnat_commands" + command.name + ".json"],
+                destination="/xnat_commands/" + command.name + ".json",
+            )
 
     def save_store_config(
         self, dockerfile: DockerRenderer, build_dir: Path, for_localhost: bool = False
