@@ -17,7 +17,7 @@ if ty.TYPE_CHECKING:
 @attrs.define(kw_only=True, auto_attribs=False)
 class XnatCommand(ContainerCommand):  # type: ignore[misc]
 
-    image: ty.Optional[XnatApp] = attrs.field(default=None)
+    image: XnatApp = attrs.field(default=None)
     internal_upload: bool = attrs.field(default=False)
 
     # Hard-code the axes of XNAT commands to be clinical

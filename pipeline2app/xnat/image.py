@@ -6,7 +6,7 @@ import typing as ty
 import attrs
 from neurodocker.reproenv import DockerRenderer
 from frametree.xnat import XnatViaCS
-from frametree.core.serialize import ClassResolver, ObjectConverter
+from frametree.core.serialize import ClassResolver, ObjectListConverter
 from frametree.core.store import Store
 from pipeline2app.core.image import App
 from .command import XnatCommand
@@ -21,11 +21,20 @@ class XnatApp(App):  # type: ignore[misc]
         "fileformats-medimage-extras",
     )
 
-    command: XnatCommand = attrs.field(
-        converter=ObjectConverter(  # type: ignore[misc]
+    commands: ty.List[XnatCommand] = attrs.field(
+        converter=ObjectListConverter(  # type: ignore[misc]
             XnatCommand
         )  # Change the command type to XnatCommand subclass
     )
+
+    @commands.validator
+    def _validate_commands(
+        self,
+        attribute: attrs.Attribute[ty.List[XnatCommand]],
+        commands: ty.List[XnatCommand],
+    ) -> None:
+        if not commands:
+            raise ValueError("At least one command must be defined within that app")
 
     def construct_dockerfile(
         self,
@@ -57,16 +66,16 @@ class XnatApp(App):  # type: ignore[misc]
 
         dockerfile = super().construct_dockerfile(build_dir, **kwargs)
 
-        xnat_command = self.command.make_json()
+        xnat_commands = [c.make_json() for c in self.commands]
 
         # Copy the generated XNAT commands inside the container for ease of reference
-        self.copy_command_ref(dockerfile, xnat_command, build_dir)
+        self.copy_command_refs(dockerfile, xnat_commands, build_dir)
 
         self.save_store_config(dockerfile, build_dir, for_localhost=for_localhost)
 
         # Convert XNAT command label into string that can by placed inside the
         # Docker label
-        commands_label = json.dumps([xnat_command]).replace("$", r"\$")
+        commands_label = json.dumps(xnat_commands).replace("$", r"\$")
 
         self.add_labels(
             dockerfile,
@@ -78,10 +87,10 @@ class XnatApp(App):  # type: ignore[misc]
     def add_entrypoint(self, dockerfile: DockerRenderer, build_dir: Path) -> None:
         pass  # Don't need to add entrypoint as the command line is specified in the command JSON
 
-    def copy_command_ref(
+    def copy_command_refs(
         self,
         dockerfile: DockerRenderer,
-        xnat_command: ty.Dict[str, ty.Any],
+        xnat_commands: ty.List[ty.Dict[str, ty.Any]],
         build_dir: Path,
     ) -> None:
         """Copy the generated command JSON within the Docker image for future reference
@@ -95,12 +104,16 @@ class XnatApp(App):  # type: ignore[misc]
         build_dir : Path
             path to build directory
         """
-        # Copy command JSON inside dockerfile for ease of reference
-        with open(build_dir / "xnat_command.json", "w") as f:
-            json.dump(xnat_command, f, indent="    ")
-        dockerfile.copy(
-            source=["./xnat_command.json"], destination="/xnat_command.json"
-        )
+        command_jsons_dir = build_dir / "xnat_commands"
+        command_jsons_dir.mkdir(parents=True, exist_ok=True)
+        for xnat_command in xnat_commands:
+            cmd_name = xnat_command["name"]
+            with open(command_jsons_dir / f"{cmd_name}.json", "w") as f:
+                json.dump(xnat_command, f, indent="    ")
+            dockerfile.copy(
+                source=[f"./xnat_commands/{cmd_name}.json"],
+                destination=f"/xnat_commands/{cmd_name}.json",
+            )
 
     def save_store_config(
         self, dockerfile: DockerRenderer, build_dir: Path, for_localhost: bool = False
