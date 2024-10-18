@@ -52,7 +52,7 @@ def test_deploy_pipelines(
 
         image_spec = {
             "title": "a command to test build process",
-            "command": cmd_spec,
+            "commands": {"test-command": cmd_spec},
             "version": {
                 "package": PKG_VERSION,
                 "build": WRAPPER_VERSION,

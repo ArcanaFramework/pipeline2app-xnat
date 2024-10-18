@@ -27,6 +27,15 @@ class XnatApp(App):  # type: ignore[misc]
         )  # Change the command type to XnatCommand subclass
     )
 
+    @commands.validator
+    def _validate_commands(
+        self,
+        attribute: attrs.Attribute[ty.List[XnatCommand]],
+        commands: ty.List[XnatCommand],
+    ) -> None:
+        if not commands:
+            raise ValueError("At least one command must be defined within that app")
+
     def construct_dockerfile(
         self,
         build_dir: Path,
@@ -57,16 +66,16 @@ class XnatApp(App):  # type: ignore[misc]
 
         dockerfile = super().construct_dockerfile(build_dir, **kwargs)
 
-        xnat_command = self.command.make_json()
+        xnat_commands = [c.make_json() for c in self.commands]
 
         # Copy the generated XNAT commands inside the container for ease of reference
-        self.copy_command_refs(dockerfile, xnat_command, build_dir)
+        self.copy_command_refs(dockerfile, xnat_commands, build_dir)
 
         self.save_store_config(dockerfile, build_dir, for_localhost=for_localhost)
 
         # Convert XNAT command label into string that can by placed inside the
         # Docker label
-        commands_label = json.dumps([xnat_command]).replace("$", r"\$")
+        commands_label = json.dumps(xnat_commands).replace("$", r"\$")
 
         self.add_labels(
             dockerfile,
@@ -81,7 +90,7 @@ class XnatApp(App):  # type: ignore[misc]
     def copy_command_refs(
         self,
         dockerfile: DockerRenderer,
-        xnat_command: ty.Dict[str, ty.Any],
+        xnat_commands: ty.List[ty.Dict[str, ty.Any]],
         build_dir: Path,
     ) -> None:
         """Copy the generated command JSON within the Docker image for future reference
@@ -97,12 +106,13 @@ class XnatApp(App):  # type: ignore[misc]
         """
         command_jsons_dir = build_dir / "xnat_commands"
         command_jsons_dir.mkdir(parents=True, exist_ok=True)
-        for command in self.commands:
-            with open(command_jsons_dir / command.name + ".json", "w") as f:
+        for xnat_command in xnat_commands:
+            cmd_name = xnat_command["name"]
+            with open(command_jsons_dir / f"{cmd_name}.json", "w") as f:
                 json.dump(xnat_command, f, indent="    ")
             dockerfile.copy(
-                source=["./xnat_commands" + command.name + ".json"],
-                destination="/xnat_commands/" + command.name + ".json",
+                source=[f"./xnat_commands/{cmd_name}.json"],
+                destination=f"/xnat_commands/{cmd_name}.json",
             )
 
     def save_store_config(

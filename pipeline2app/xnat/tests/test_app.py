@@ -47,7 +47,7 @@ def run_spec(
                 "package": "1.0",
             },
             "title": "A pipeline to test Pipeline2app's deployment tool",
-            "command": command_spec,
+            "commands": {"concatenate-test": command_spec},
             "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
             "docs": {
                 "info_url": "http://concatenate.readthefakedocs.io",
@@ -108,7 +108,7 @@ def run_spec(
                     "pipeline2app-xnat",
                 ],
             },
-            "command": bids_command_spec,
+            "commands": {"bids-test-command": bids_command_spec},
             "authors": [
                 {"name": "Some One Else", "email": "some.oneelse@an.email.org"}
             ],
@@ -212,7 +212,9 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
     # the fact that the container service test XNAT instance shares the
     # outer Docker socket. Since we build the pipeline image with the same
     # socket there is no need to pull it.
-    xnat_command = image_spec.command.make_json()
+
+    cmd = image_spec.command()
+    xnat_command = cmd.make_json()
 
     launch_inputs = {}
 
@@ -222,11 +224,11 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
     for pname, pval in params.items():
         launch_inputs[pname] = pval
 
-    if image_spec.command.internal_upload:
+    if cmd.internal_upload:
         # If using internal upload, the output names are fixed
-        output_values = {o: o for o in image_spec.command.output_names}
+        output_values = {o: o for o in cmd.output_names}
     else:
-        output_values = {o: o + "_sink" for o in image_spec.command.output_names}
+        output_values = {o: o + "_sink" for o in cmd.output_names}
         launch_inputs.update(output_values)
 
     with xnat_repository.connection:
@@ -245,7 +247,7 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
         assert status == "Complete", f"Workflow {workflow_id} failed.\n{out_str}"
 
-        access_type = "direct" if image_spec.command.internal_upload else "api"
+        access_type = "direct" if cmd.internal_upload else "api"
 
         assert f"via {access_type} access" in out_str.lower()
 
@@ -259,7 +261,7 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
                 Path(f).name.lstrip("sub-DEFAULT_")
                 for f in test_xsession.resources[sinked_name].files
             )
-            if image_spec.command.internal_upload:
+            if cmd.internal_upload:
                 reference = sorted(
                     d.rstrip("_sink.txt") + ".txt" for d in deriv.filenames
                 )

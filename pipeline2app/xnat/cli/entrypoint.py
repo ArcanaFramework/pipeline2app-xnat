@@ -36,12 +36,13 @@ in the format <store-nickname>//<dataset-id>[@<dataset-name>]
 def cs_entrypoint(
     address: str,
     spec_path: Path,
+    command: ty.Optional[str],
     **kwargs: ty.Any,
 ) -> None:
 
     image_spec = XnatApp.load(spec_path)
 
-    image_spec.command.execute(
+    image_spec.command(command).execute(
         address,
         **kwargs,
     )

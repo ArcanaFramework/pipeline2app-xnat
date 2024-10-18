@@ -18,7 +18,8 @@ def install_cs_command(
     enable: bool = False,
     projects_to_enable: ty.Sequence[str] = (),
     replace_existing: bool = False,
-) -> None:
+    command_name: ty.Optional[str] = None,
+) -> int:
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
 
@@ -34,6 +35,8 @@ def install_cs_command(
         ID of the project to enable the command for
     replace_existing : bool
         Whether to replace existing command with the same name
+    command_name : str, optional
+        the command to install, if an image name is provided instead of a command JSON
 
     Returns
     -------
@@ -41,8 +44,13 @@ def install_cs_command(
         the ID of the installed command
     """
     if isinstance(image_name_or_command_json, str):
+        if not command_name:
+            raise ValueError(
+                "If the first argument of the install_cs_command is a string "
+                f"('{image_name_or_command_json}) 'command_name' must be provided"
+            )
         command_json_file = extract_file_from_docker_image(
-            image_name_or_command_json, "/xnat_command.json"
+            image_name_or_command_json, f"/xnat_commands/{command_name}.json"
         )
         if command_json_file is None:
             raise RuntimeError(
@@ -54,8 +62,8 @@ def install_cs_command(
         command_json = image_name_or_command_json
     else:
         raise RuntimeError(
-            f"Unrecognised type of 'image_name_or_command_json' arg: {type(image_name_or_command_json)} "
-            "expected str or dict"
+            "Unrecognised type of 'image_name_or_command_json' arg: "
+            f"{type(image_name_or_command_json)} expected str or dict"
         )
 
     cmd_name = command_json["name"]
@@ -67,7 +75,7 @@ def install_cs_command(
                 xlogin.delete(f"/xapi/commands/{cmd['id']}", accepted_status=[200, 204])
                 logger.info(f"Deleted existing command '{cmd_name}'")
 
-    cmd_id = xlogin.post("/xapi/commands", json=command_json).json()
+    cmd_id: int = xlogin.post("/xapi/commands", json=command_json).json()
 
     # Enable the command globally and in the project
     if enable:
