@@ -1,4 +1,6 @@
 from pathlib import Path
+import random
+from copy import deepcopy
 import pytest
 from conftest import (
     TEST_XNAT_DATASET_BLUEPRINTS,
@@ -7,6 +9,7 @@ from conftest import (
     FileBP,
     access_dataset,
 )
+from frametree.xnat import Xnat
 from pipeline2app.xnat.image import XnatApp
 from pipeline2app.xnat.command import XnatCommand
 from pipeline2app.xnat.deploy import (
@@ -268,3 +271,139 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
             else:
                 reference = sorted(deriv.filenames)
             assert uploaded_files == reference
+
+
+def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> None:
+
+    bp = TestXnatDatasetBlueprint(
+        dim_lengths=[1, 1, 1],
+        scans=[
+            ScanBP(
+                name="scan1",
+                resources=[FileBP(path="TEXT", datatype=Text, filenames=["file1.txt"])],
+            ),
+            ScanBP(
+                name="scan2",
+                resources=[FileBP(path="TEXT", datatype=Text, filenames=["file2.txt"])],
+            ),
+        ],
+    )
+
+    project_id = run_prefix + "multi_command" + str(hex(random.getrandbits(16)))[2:]
+
+    dataset = bp.make_dataset(
+        dataset_id=project_id,
+        store=xnat_repository,
+        name="",
+    )
+
+    two_dup_spec = dict(
+        name="concatenate",
+        task="pipeline2app.testing.tasks:concatenate",
+        row_frequency=Clinical.session.tostr(),
+        inputs=[
+            {
+                "name": "first_file",
+                "datatype": "text/text-file",
+                "field": "in_file1",
+                "help": "dummy",
+            },
+            {
+                "name": "second_file",
+                "datatype": "text/text-file",
+                "field": "in_file2",
+                "help": "dummy",
+            },
+        ],
+        outputs=[
+            {
+                "name": "concatenated",
+                "datatype": "text/text-file",
+                "field": "out_file",
+                "help": "dummy",
+            }
+        ],
+        parameters={
+            "duplicates": {
+                "datatype": "field/integer",
+                "default": 2,
+                "help": "dummy",
+            }
+        },
+    )
+
+    three_dup_spec = deepcopy(two_dup_spec)
+    three_dup_spec["parameters"]["duplicates"]["default"] = 3
+
+    test_spec = {
+        "name": "test_multi_commands",
+        "title": "a test image for multi-image commands",
+        "commands": {
+            "two_duplicates": two_dup_spec,
+            "three_duplicates": three_dup_spec,
+        },
+        "version": {"package": "1.0", "build": "1"},
+        "packages": {
+            "system": ["vim"],  # just to test it out
+            "pip": {
+                "fileformats": None,
+                "pipeline2app": None,
+                "frametree": None,
+            },
+        },
+        "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
+        "docs": {
+            "info_url": "http://concatenate.readthefakedocs.io",
+        },
+    }
+
+    app = XnatApp.load(test_spec)
+
+    app.make(
+        build_dir=tmp_path / "build-dir",
+        pipeline2app_install_extras=["test"],
+        use_local_packages=True,
+        for_localhost=True,
+    )
+
+    fnames = ["file1.txt", "file2.txt"]
+
+    base_launch_inputs = {
+        "first_file": "scan1",
+        "second_file": "scan2",
+    }
+
+    command_names = ["two_duplicates", "three_duplicates"]
+
+    with xnat_repository.connection as xlogin:
+
+        test_xsession = next(iter(xlogin.projects[dataset.id].experiments.values()))
+        for command_name in command_names:
+
+            launch_inputs = deepcopy(base_launch_inputs)
+            launch_inputs["concatenated"] = command_name
+
+            workflow_id, status, out_str = install_and_launch_xnat_cs_command(
+                command_json=app.command(command_name).make_json(),
+                project_id=project_id,
+                session_id=test_xsession.id,
+                inputs=launch_inputs,
+                xlogin=xlogin,
+            )
+
+            assert status == "Complete", f"Workflow {workflow_id} failed.\n{out_str}"
+
+        assert sorted(r.label for r in test_xsession.resources.values()) == sorted(
+            command_names
+        )
+
+    # Add source column to saved dataset
+    reloaded = dataset.reload()
+    for command_name in command_names:
+        sink = reloaded[command_name]
+        duplicates = 2 if command_name == "two_duplicates" else 3
+        expected_contents = "\n".join(fnames * duplicates)
+        for item in sink:
+            with open(item) as f:
+                contents = f.read()
+            assert contents == expected_contents
