@@ -66,10 +66,8 @@ class XnatApp(App):  # type: ignore[misc]
 
         dockerfile = super().construct_dockerfile(build_dir, **kwargs)
 
-        xnat_commands = [c.make_json() for c in self.commands]
-
         # Copy the generated XNAT commands inside the container for ease of reference
-        self.copy_command_refs(dockerfile, xnat_commands, build_dir)
+        xnat_commands = self.copy_command_refs(dockerfile, build_dir)
 
         self.save_store_config(dockerfile, build_dir, for_localhost=for_localhost)
 
@@ -90,9 +88,8 @@ class XnatApp(App):  # type: ignore[misc]
     def copy_command_refs(
         self,
         dockerfile: DockerRenderer,
-        xnat_commands: ty.List[ty.Dict[str, ty.Any]],
         build_dir: Path,
-    ) -> None:
+    ) -> ty.List[ty.Dict[str, ty.Any]]:
         """Copy the generated command JSON within the Docker image for future reference
 
         Parameters
@@ -103,17 +100,25 @@ class XnatApp(App):  # type: ignore[misc]
             XNAT command to write to file within the image for future reference
         build_dir : Path
             path to build directory
+
+        Returns
+        -------
+        list[dict[str, Any]]
+            the converted XNAT commands to install in the label
         """
         command_jsons_dir = build_dir / "xnat_commands"
         command_jsons_dir.mkdir(parents=True, exist_ok=True)
-        for xnat_command in xnat_commands:
-            cmd_name = xnat_command["name"]
-            with open(command_jsons_dir / f"{cmd_name}.json", "w") as f:
+        xnat_commands = []
+        for command in self.commands:
+            xnat_command = command.make_json()
+            with open(command_jsons_dir / f"{command.name}.json", "w") as f:
                 json.dump(xnat_command, f, indent="    ")
             dockerfile.copy(
-                source=[f"./xnat_commands/{cmd_name}.json"],
-                destination=f"/xnat_commands/{cmd_name}.json",
+                source=[f"./xnat_commands/{command.name}.json"],
+                destination=f"/xnat_commands/{command.name}.json",
             )
+            xnat_commands.append(xnat_command)
+        return xnat_commands
 
     def save_store_config(
         self, dockerfile: DockerRenderer, build_dir: Path, for_localhost: bool = False
