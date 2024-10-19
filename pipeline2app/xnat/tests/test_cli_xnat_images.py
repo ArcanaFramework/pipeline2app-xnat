@@ -7,7 +7,7 @@ import pytest
 import docker
 import xnat
 from pipeline2app.core.cli import make
-from pipeline2app.xnat.cli.release import (
+from pipeline2app.xnat.cli.deploy import (
     deploy_pipelines,
     save_token,
     XNAT_HOST_KEY,

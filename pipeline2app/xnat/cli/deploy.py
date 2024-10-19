@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import yaml
 import logging
+import typing as ty
 import click
 import xnat
 import os
@@ -20,7 +21,9 @@ XNAT_AUTH_FILE_KEY = "XNAT_AUTH_FILE"
 XNAT_AUTH_FILE_DEFAULT = Path("~/.pipeline2app_xnat_user_token.json").expanduser()
 
 
-def load_auth(server, user, password, auth_file):
+def load_auth(
+    server: str, user: str, password: str, auth_file: Path
+) -> ty.Tuple[str, str, str]:
     if server is not None:
         if user is None:
             raise RuntimeError(f"A user must be provided if a server ({server}) is")
@@ -48,7 +51,7 @@ def load_auth(server, user, password, auth_file):
 IMAGE_OR_COMMAND_FILE the name of the Pipeline2app container service pipeline Docker image or
 the path to a command JSON file to install
 """,
-)
+)  # type: ignore[misc]
 @click.argument("image_or_command_file", type=str)
 @click.option(
     "--enable/--disable",
@@ -85,6 +88,12 @@ the path to a command JSON file to install
     help=("the password used to authenticate with the XNAT instance to update"),
 )
 @click.option(
+    "--name",
+    type=str,
+    default=None,
+    help=("The name of the command to select (required if there are multiple)"),
+)
+@click.option(
     "--auth-file",
     type=click.Path(path_type=Path),
     default=XNAT_AUTH_FILE_DEFAULT,
@@ -92,15 +101,16 @@ the path to a command JSON file to install
     help=("The path to save the alias/token pair to"),
 )
 def install_command(
-    image_or_command_file,
-    enable,
-    projects_to_enable,
-    replace_existing,
-    server,
-    user,
-    password,
-    auth_file,
-):
+    image_or_command_file: str,
+    enable: bool,
+    projects_to_enable: ty.List[str],
+    replace_existing: bool,
+    server: str,
+    user: str,
+    password: str,
+    auth_file: Path,
+    name: str,
+) -> None:
     server, user, password = load_auth(server, user, password, auth_file)
 
     if Path(image_or_command_file).exists():
@@ -114,6 +124,7 @@ def install_command(
             enable=enable,
             projects_to_enable=projects_to_enable,
             replace_existing=replace_existing,
+            command_name=name,
         )
 
     click.echo(
@@ -131,7 +142,7 @@ PROJECT_ID of the project to launch the command on
 
 SESSION_ID of the session to launch the command on
 """,
-)
+)  # type: ignore[misc]
 @click.argument("command_name", type=str)
 @click.argument("project_id", type=str)
 @click.argument("session_id", type=str)
@@ -178,21 +189,21 @@ SESSION_ID of the session to launch the command on
     help=("The path to save the alias/token pair to"),
 )
 def launch_command(
-    command_name,
-    project_id,
-    session_id,
-    inputs,
-    timeout,
-    poll_interval,
-    server,
-    user,
-    password,
-    auth_file,
-):
+    command_name: str,
+    project_id: str,
+    session_id: str,
+    inputs: ty.List[ty.Tuple[str, str]],
+    timeout: int,
+    poll_interval: int,
+    server: str,
+    user: str,
+    password: str,
+    auth_file: Path,
+) -> None:
 
     server, user, password = load_auth(server, user, password, auth_file)
 
-    inputs_dict = {}
+    inputs_dict: ty.Dict[str, ty.Any] = {}
     for name, val in inputs:
         if name in inputs_dict:
             raise KeyError(
@@ -228,7 +239,7 @@ CONFIG_YAML a YAML file contains the login details for the XNAT server to update
 
 AUTH_FILE the path at which to save the authentication file containing the alias/token
 """,
-)
+)  # type: ignore[misc]
 @click.option(
     "--auth-file",
     type=click.Path(path_type=Path),
@@ -254,7 +265,7 @@ AUTH_FILE the path at which to save the authentication file containing the alias
     default=None,
     help=("the password used to authenticate with the XNAT instance to update"),
 )
-def save_token(auth_file, server, user, password):
+def save_token(auth_file: Path, server: str, user: str, password: str) -> None:
 
     server, user, password = load_auth(server, user, password, auth_file)
 
@@ -299,7 +310,7 @@ Which of available pipelines to install can be controlled by a YAML file passed 
     exclude:
     - tag: ghcr.io/Australian-Imaging-Service/mri.human.neuro.bidsapps.
 """,  # noqa
-)
+)  # type: ignore[misc]
 @click.argument("manifest_file", type=click.File())
 @click.option(
     "--server",
@@ -331,14 +342,25 @@ Which of available pipelines to install can be controlled by a YAML file passed 
     type=click.File(),
     help=("a YAML file containing filter rules for the images to install"),
 )
-def deploy_pipelines(manifest_file, server, user, password, auth_file, filters_file):
+def deploy_pipelines(
+    manifest_file: ty.TextIO,
+    server: str,
+    user: str,
+    password: str,
+    auth_file: Path,
+    filters_file: ty.TextIO,
+) -> None:
 
     server, user, password = load_auth(server, user, password, auth_file)
 
     manifest = json.load(manifest_file)
     filters = yaml.load(filters_file, Loader=yaml.Loader) if filters_file else {}
 
-    def matches_entry(entry, match_exprs, default=True):
+    def matches_entry(
+        entry: ty.Dict[str, ty.Any],
+        match_exprs: ty.List[ty.Dict[str, str]],
+        default: bool = True,
+    ) -> bool:
         """Determines whether an entry meets the inclusion and exclusion criteria
 
         Parameters
@@ -349,14 +371,22 @@ def deploy_pipelines(manifest_file, server, user, password, auth_file, filters_f
             match criteria
         default : bool
             the value if match_exprs are empty
+
+        Returns
+        -------
+        bool
+            whether the entry meets the inclusion criteria
         """
         if not match_exprs:
             return default
-        return re.match(
-            "|".join(
-                i["name"].replace(".", "\\.").replace("*", ".*") for i in match_exprs
-            ),
-            entry["name"],
+        return bool(
+            re.match(
+                "|".join(
+                    i["name"].replace(".", "\\.").replace("*", ".*")
+                    for i in match_exprs
+                ),
+                entry["name"],
+            )
         )
 
     with xnat.connect(
