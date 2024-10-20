@@ -54,7 +54,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
             + output_args
             + param_args
             + xnat_input_args
-            + [flag_arg]
+            + ["--command", self.name, flag_arg],
         )
 
         return cmd_json
