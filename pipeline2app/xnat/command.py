@@ -54,7 +54,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
             + output_args
             + param_args
             + xnat_input_args
-            + [flag_arg]
+            + ["--command", self.name, flag_arg],
         )
 
         return cmd_json
@@ -70,7 +70,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         """
 
         cmd_json = {
-            "name": self.name,
+            "name": f"{self.image.name}.{self.name}",
             "description": (f"{self.name} {self.image.version}: {self.image.title}"),
             "label": self.name,
             "schema-version": "1.0",

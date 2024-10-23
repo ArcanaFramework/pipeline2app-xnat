@@ -7,7 +7,7 @@ import pytest
 import docker
 import xnat
 from pipeline2app.core.cli import make
-from pipeline2app.xnat.cli.release import (
+from pipeline2app.xnat.cli.deploy import (
     deploy_pipelines,
     save_token,
     XNAT_HOST_KEY,
@@ -53,10 +53,7 @@ def test_deploy_pipelines(
         image_spec = {
             "title": "a command to test build process",
             "commands": {"test-command": cmd_spec},
-            "version": {
-                "package": PKG_VERSION,
-                "build": WRAPPER_VERSION,
-            },
+            "version": PKG_VERSION,
             "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
             "docs": {
                 "info_url": "http://concatenate.readthefakedocs.io",
