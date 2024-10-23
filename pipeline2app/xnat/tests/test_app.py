@@ -46,9 +46,7 @@ def run_spec(
         spec["build"] = {
             "org": "pipeline2app-tests",
             "name": run_prefix + "-concatenate-xnat-cs",
-            "version": {
-                "package": "1.0",
-            },
+            "version": "1.0",
             "title": "A pipeline to test Pipeline2app's deployment tool",
             "commands": {"concatenate-test": command_spec},
             "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
@@ -88,9 +86,7 @@ def run_spec(
         spec["build"] = {
             "org": "pipeline2app-tests",
             "name": run_prefix + "-bids-app-xnat-cs",
-            "version": {
-                "package": "1.0",
-            },
+            "version": "1.0",
             "title": "A pipeline to test wrapping of BIDS apps",
             "base_image": {
                 "name": mock_bids_app_image,
@@ -342,7 +338,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
             "two_duplicates": two_dup_spec,
             "three_duplicates": three_dup_spec,
         },
-        "version": {"package": "1.0", "build": "1"},
+        "version": "1.0",
         "packages": {
             "system": ["vim"],  # just to test it out
             "pip": {
