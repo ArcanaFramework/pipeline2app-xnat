@@ -47,7 +47,7 @@ def test_command_execute(
             ("number_of_duplicates", str(duplicates)),
         ],
         raise_errors=True,
-        plugin="serial",
+        worker="debug",
         work_dir=str(work_dir),
         loglevel="debug",
         dataset_hierarchy=",".join(bp.hierarchy),
