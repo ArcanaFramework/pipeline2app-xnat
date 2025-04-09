@@ -48,7 +48,7 @@ def load_auth(
     name="install-command",
     help="""Installs a container service pipelines command on an XNAT server
 
-IMAGE_OR_COMMAND_FILE the name of the Pipeline2app container service pipeline Docker image or
+IMAGE_OR_COMMAND_FILE the name of the Pydra2App container service pipeline Docker image or
 the path to a command JSON file to install
 """,
 )  # type: ignore[misc]

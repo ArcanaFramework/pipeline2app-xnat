@@ -3,13 +3,13 @@ import time
 import logging
 import json
 import xnat
-from pydra2app.core.exceptions import Pipeline2appError
+from pydra2app.core.exceptions import Pydra2AppError
 from pydra2app.core.utils import extract_file_from_docker_image
 
 
 logger = logging.getLogger("pydra2app-xnat")
 
-INTERNAL_INPUTS = ("Pipeline2app_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
+INTERNAL_INPUTS = ("Pydra2App_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
 
 
 def install_cs_command(
@@ -187,7 +187,7 @@ def launch_cs_command(
     ).json()
 
     if launch_result["status"] != "success":
-        raise Pipeline2appError(
+        raise Pydra2AppError(
             f"{cmd_name} workflow wasn't launched successfully ({launch_result['status']})"
         )
     workflow_id = launch_result["workflow-id"]

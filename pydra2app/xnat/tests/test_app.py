@@ -47,7 +47,7 @@ def run_spec(
             "org": "pydra2app-tests",
             "name": run_prefix + "-concatenate-xnat-cs",
             "version": "1.0",
-            "title": "A pipeline to test Pipeline2app's deployment tool",
+            "title": "A pipeline to test Pydra2App's deployment tool",
             "commands": {"concatenate-test": command_spec},
             "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
             "docs": {
