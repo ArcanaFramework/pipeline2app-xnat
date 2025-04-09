@@ -22,7 +22,7 @@ from imageio.core.fetching import get_remote_file
 import xnat4tests
 import medimages4tests.dummy.nifti
 import medimages4tests.dummy.dicom.mri.fmap.siemens.skyra.syngo_d13c
-from pipeline2app.core.image.base import BaseImage
+from pydra2app.core.image.base import BaseImage
 from frametree.common import Clinical
 from frametree.core.frameset import FrameSet
 from fileformats.medimage import NiftiGzX, NiftiGz, DicomSeries, NiftiX
@@ -67,7 +67,7 @@ PKG_DIR = Path(__file__).parent
 
 log_level = logging.WARNING
 
-logger = logging.getLogger("pipeline2app")
+logger = logging.getLogger("pydra2app")
 logger.setLevel(log_level)
 
 sch = logging.StreamHandler()
@@ -76,7 +76,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 sch.setFormatter(formatter)
 logger.addHandler(sch)
 
-logger = logging.getLogger("pipeline2app")
+logger = logging.getLogger("pydra2app")
 logger.setLevel(log_level)
 
 sch = logging.StreamHandler()
@@ -565,8 +565,8 @@ def command_spec() -> ty.Dict[str, ty.Any]:
 
 BIDS_VALIDATOR_DOCKER = "bids/validator:latest"
 SUCCESS_STR = "This dataset appears to be BIDS compatible"
-MOCK_BIDS_APP_IMAGE = "pipeline2app-mock-bids-app"
-BIDS_VALIDATOR_APP_IMAGE = "pipeline2app-bids-validator-app"
+MOCK_BIDS_APP_IMAGE = "pydra2app-mock-bids-app"
+BIDS_VALIDATOR_APP_IMAGE = "pydra2app-bids-validator-app"
 
 
 @pytest.fixture(scope="session")

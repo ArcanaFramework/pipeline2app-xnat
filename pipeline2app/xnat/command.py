@@ -3,7 +3,7 @@ import typing as ty
 import re
 import attrs
 from fileformats.core import FileSet, to_mime
-from pipeline2app.core.command.base import ContainerCommand
+from pydra2app.core.command.base import ContainerCommand
 from frametree.xnat import XnatViaCS
 from frametree.core.axes import Axes
 from frametree.core.utils import path2label
@@ -43,13 +43,13 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
 
         output_args = self.add_output_fields(cmd_json)
 
-        flag_arg = self.add_pipeline2app_flags_field(cmd_json)
+        flag_arg = self.add_pydra2app_flags_field(cmd_json)
 
         xnat_input_args = self.add_inputs_from_xnat(cmd_json)
 
         cmd_json["command-line"] = " ".join(
             self.image.activate_conda()
-            + ["pipeline2app", "ext", "xnat", "cs-entrypoint", "xnat-cs//[PROJECT_ID]"]
+            + ["pydra2app", "ext", "xnat", "cs-entrypoint", "xnat-cs//[PROJECT_ID]"]
             + input_args
             + output_args
             + param_args
@@ -231,14 +231,14 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
 
         return cmd_args
 
-    def add_pipeline2app_flags_field(self, cmd_json: ty.Dict[str, ty.Any]) -> str:
+    def add_pydra2app_flags_field(self, cmd_json: ty.Dict[str, ty.Any]) -> str:
 
         # Add input for dataset name
         FLAGS_KEY = "#PIPELINE2APP_FLAGS#"
         cmd_json["inputs"].append(
             {
                 "name": "Pipeline2app_flags",
-                "description": "Flags passed to `run-pipeline2app-pipeline` command",
+                "description": "Flags passed to `run-pydra2app-pipeline` command",
                 "type": "string",
                 "default-value": (
                     "--plugin serial "

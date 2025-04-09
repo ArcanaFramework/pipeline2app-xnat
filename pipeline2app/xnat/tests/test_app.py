@@ -10,9 +10,9 @@ from conftest import (
     access_dataset,
 )
 from frametree.xnat import Xnat
-from pipeline2app.xnat.image import XnatApp
-from pipeline2app.xnat.command import XnatCommand
-from pipeline2app.xnat.deploy import (
+from pydra2app.xnat.image import XnatApp
+from pydra2app.xnat.command import XnatCommand
+from pydra2app.xnat.deploy import (
     install_and_launch_xnat_cs_command,
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
@@ -44,7 +44,7 @@ def run_spec(
     if task == "func":
         cmd_spec = command_spec
         spec["build"] = {
-            "org": "pipeline2app-tests",
+            "org": "pydra2app-tests",
             "name": run_prefix + "-concatenate-xnat-cs",
             "version": "1.0",
             "title": "A pipeline to test Pipeline2app's deployment tool",
@@ -64,8 +64,8 @@ def run_spec(
                     "fileformats-medimage-extras",
                     "frametree",
                     "frametree-xnat",
-                    "pipeline2app",
-                    "pipeline2app-xnat",
+                    "pydra2app",
+                    "pydra2app-xnat",
                     "pydra",
                 ],
             },
@@ -84,7 +84,7 @@ def run_spec(
         bids_command_spec["configuration"]["executable"] = "/launch.sh"
         cmd_spec = bids_command_spec
         spec["build"] = {
-            "org": "pipeline2app-tests",
+            "org": "pydra2app-tests",
             "name": run_prefix + "-bids-app-xnat-cs",
             "version": "1.0",
             "title": "A pipeline to test wrapping of BIDS apps",
@@ -103,8 +103,8 @@ def run_spec(
                     "frametree-bids",
                     "frametree-xnat",
                     "pydra",
-                    "pipeline2app",
-                    "pipeline2app-xnat",
+                    "pydra2app",
+                    "pydra2app-xnat",
                 ],
             },
             "commands": {"bids-test-command": bids_command_spec},
@@ -201,7 +201,7 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
     image_spec.make(
         build_dir=work_dir,
-        pipeline2app_install_extras=["test"],
+        pydra2app_install_extras=["test"],
         use_local_packages=True,
         for_localhost=True,
     )
@@ -295,7 +295,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
 
     two_dup_spec = dict(
         name="concatenate",
-        task="pipeline2app.testing.tasks:concatenate",
+        task="pydra2app.testing.tasks:concatenate",
         row_frequency=Clinical.session.tostr(),
         inputs=[
             {
@@ -343,7 +343,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
             "system": ["vim"],  # just to test it out
             "pip": {
                 "fileformats": None,
-                "pipeline2app": None,
+                "pydra2app": None,
                 "frametree": None,
             },
         },
@@ -357,7 +357,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
 
     app.make(
         build_dir=tmp_path / "build-dir",
-        pipeline2app_install_extras=["test"],
+        pydra2app_install_extras=["test"],
         use_local_packages=True,
         for_localhost=True,
     )

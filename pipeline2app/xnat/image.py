@@ -8,7 +8,7 @@ from neurodocker.reproenv import DockerRenderer
 from frametree.xnat import XnatViaCS
 from frametree.core.serialize import ClassResolver, ObjectListConverter
 from frametree.core.store import Store
-from pipeline2app.core.image import App
+from pydra2app.core.image import App
 from .command import XnatCommand
 
 
@@ -16,7 +16,7 @@ from .command import XnatCommand
 class XnatApp(App):  # type: ignore[misc]
 
     PIP_DEPENDENCIES = (
-        "pipeline2app-xnat",
+        "pydra2app-xnat",
         "fileformats-medimage",
         "fileformats-medimage-extras",
     )
@@ -148,7 +148,7 @@ class XnatApp(App):  # type: ignore[misc]
         Store.save_configs(
             {"xnat-cs": xnat_cs_store_entry}, config_path=build_dir / "stores.yaml"
         )
-        dockerfile.run(command="mkdir -p /root/.pipeline2app")
+        dockerfile.run(command="mkdir -p /root/.pydra2app")
         dockerfile.run(command=f"mkdir -p {str(XnatViaCS.CACHE_DIR)}")
         dockerfile.copy(
             source=["./stores.yaml"],

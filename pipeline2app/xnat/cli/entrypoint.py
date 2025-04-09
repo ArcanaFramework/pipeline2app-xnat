@@ -1,8 +1,8 @@
 import click
 from pathlib import Path
 import typing as ty
-from pipeline2app.core.command import entrypoint_opts
-from pipeline2app.xnat import XnatApp
+from pydra2app.core.command import entrypoint_opts
+from pydra2app.xnat import XnatApp
 from .base import xnat_group
 
 

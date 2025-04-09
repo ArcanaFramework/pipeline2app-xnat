@@ -3,11 +3,11 @@ import time
 import logging
 import json
 import xnat
-from pipeline2app.core.exceptions import Pipeline2appError
-from pipeline2app.core.utils import extract_file_from_docker_image
+from pydra2app.core.exceptions import Pipeline2appError
+from pydra2app.core.utils import extract_file_from_docker_image
 
 
-logger = logging.getLogger("pipeline2app-xnat")
+logger = logging.getLogger("pydra2app-xnat")
 
 INTERNAL_INPUTS = ("Pipeline2app_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
 

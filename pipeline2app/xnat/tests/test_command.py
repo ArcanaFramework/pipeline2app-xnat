@@ -2,7 +2,7 @@ from operator import mul
 from functools import reduce
 import random
 import pytest
-from pipeline2app.xnat import XnatCommand
+from pydra2app.xnat import XnatCommand
 from conftest import TEST_XNAT_DATASET_BLUEPRINTS, access_dataset
 
 
