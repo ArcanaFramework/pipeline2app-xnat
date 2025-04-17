@@ -340,7 +340,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
         },
         "version": "1.0",
         "packages": {
-            "system": ["vim"],  # just to test it out
+            "system": ["vim", "git"],  # just to test it out
             "pip": {
                 "fileformats": None,
                 "pydra2app": None,
