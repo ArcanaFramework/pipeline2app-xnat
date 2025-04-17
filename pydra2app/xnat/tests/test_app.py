@@ -295,7 +295,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
 
     two_dup_spec = dict(
         name="concatenate",
-        task="pydra2app.testing.tasks:concatenate",
+        task="pydra2app.testing.tasks:Concatenate",
         row_frequency=Clinical.session.tostr(),
         inputs=[
             {

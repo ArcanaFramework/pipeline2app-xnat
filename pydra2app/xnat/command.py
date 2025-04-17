@@ -241,7 +241,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                 "description": "Flags passed to `run-pydra2app-pipeline` command",
                 "type": "string",
                 "default-value": (
-                    "--plugin serial "
+                    "--plugin cf "
                     "--work /wl "  # noqa NB: work dir moved inside container due to file-locking issue on some mounted volumes (see https://github.com/tox-dev/py-filelock/issues/147)
                     "--dataset-name default "
                     "--loglevel info "

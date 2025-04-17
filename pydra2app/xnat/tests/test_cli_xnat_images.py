@@ -36,7 +36,7 @@ def test_deploy_pipelines(
     WRAPPER_VERSION = "1-pullimages"
 
     reverse_command_spec = copy(command_spec)
-    reverse_command_spec["task"] = "pydra2app.testing.tasks:concatenate_reverse"
+    reverse_command_spec["task"] = "pydra2app.testing.tasks:ConcatenateReverse"
 
     spec_dir = work_dir / DOCKER_ORG
     pkg_path = spec_dir / IMAGE_GROUP_NAME
