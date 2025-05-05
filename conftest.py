@@ -524,41 +524,8 @@ def dummy_niftix(work_dir: Path) -> NiftiX:
 @pytest.fixture(scope="session")
 def command_spec() -> ty.Dict[str, ty.Any]:
     return {
-        "task": "frametree.testing.tasks:concatenate",
-        "inputs": {
-            "first_file": {
-                "datatype": "text/text-file",
-                "field": "in_file1",
-                "column_defaults": {
-                    "row_frequency": "session",
-                },
-                "help": "the first file to pass as an input",
-            },
-            "second_file": {
-                "datatype": "text/text-file",
-                "field": "in_file2",
-                "column_defaults": {
-                    "row_frequency": "session",
-                },
-                "help": "the second file to pass as an input",
-            },
-        },
-        "outputs": {
-            "concatenated_file": {
-                "datatype": "text/text-file",
-                "field": "out_file",
-                "help": "an output file",
-            }
-        },
-        "parameters": {
-            "number_of_duplicates": {
-                "field": "duplicates",
-                "default": 2,
-                "datatype": "int",
-                "required": True,
-                "help": "a parameter",
-            }
-        },
+        "task": "frametree.testing.tasks:Concatenate",
+        "parameters": ["duplicates"],
         "row_frequency": "common:Clinical[session]",
     }
 

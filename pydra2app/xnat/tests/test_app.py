@@ -297,39 +297,11 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
         name="concatenate",
         task="pydra2app.testing.tasks:Concatenate",
         row_frequency=Clinical.session.tostr(),
-        inputs=[
-            {
-                "name": "first_file",
-                "datatype": "text/text-file",
-                "field": "in_file1",
-                "help": "dummy",
-            },
-            {
-                "name": "second_file",
-                "datatype": "text/text-file",
-                "field": "in_file2",
-                "help": "dummy",
-            },
-        ],
-        outputs=[
-            {
-                "name": "concatenated",
-                "datatype": "text/text-file",
-                "field": "out_file",
-                "help": "dummy",
-            }
-        ],
-        parameters={
-            "duplicates": {
-                "datatype": "field/integer",
-                "default": 2,
-                "help": "dummy",
-            }
-        },
+        configuration={"duplicates": 2},
     )
 
     three_dup_spec = deepcopy(two_dup_spec)
-    three_dup_spec["parameters"]["duplicates"]["default"] = 3
+    three_dup_spec["configuration"]["duplicates"] = 3
 
     test_spec = {
         "name": "test_multi_commands",

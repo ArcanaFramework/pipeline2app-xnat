@@ -37,14 +37,14 @@ def test_command_execute(
     command.execute(
         address=dataset.locator,
         input_values=[
-            ("first_file", "scan1"),
-            ("second_file", "scan2"),
+            ("in_file1", "scan1"),
+            ("in_file2", "scan2"),
         ],
         output_values=[
-            ("concatenated_file", "sink_file"),
+            ("out_file", "sink_file"),
         ],
         parameter_values=[
-            ("number_of_duplicates", str(duplicates)),
+            ("duplicates", str(duplicates)),
         ],
         raise_errors=True,
         worker="debug",
