@@ -297,10 +297,10 @@ TEST_XNAT_DATASET_BLUEPRINTS = {
         ],
         derivatives=[
             FileBP(
-                path="concatenated_file",
+                path="out_file",
                 row_frequency=Clinical.session,
                 datatype=Text,
-                filenames=["concatenated_file_sink.txt"],
+                filenames=["out_file_sink.txt"],
             )
         ],
     ),
@@ -538,57 +538,42 @@ BIDS_VALIDATOR_APP_IMAGE = "pydra2app-bids-validator-app"
 
 @pytest.fixture(scope="session")
 def bids_command_spec(mock_bids_app_executable: str) -> ty.Dict[str, ty.Any]:
-    inputs = {
-        "T1w": {
-            "configuration": {
-                "path": "anat/T1w",
-            },
-            "datatype": "medimage/nifti-gz-x",
-            "help": "T1-weighted image",
-        },
-        "T2w": {
-            "configuration": {
-                "path": "anat/T2w",
-            },
-            "datatype": "medimage/nifti-gz-x",
-            "help": "T2-weighted image",
-        },
-        "DWI": {
-            "configuration": {
-                "path": "dwi/dwi",
-            },
-            "datatype": "medimage/nifti-gz-x-bvec",
-            "help": "DWI-weighted image",
-        },
-    }
-
-    outputs = {
-        "file1": {
-            "configuration": {
-                "path": "file1",
-            },
-            "datatype": "text/text-file",
-            "help": "an output file",
-        },
-        "file2": {
-            "configuration": {
-                "path": "file2",
-            },
-            "datatype": "text/text-file",
-            "help": "another output file",
-        },
-    }
 
     return {
-        "task": "frametree.bids.tasks:bids_app",
-        "inputs": inputs,
-        "outputs": outputs,
-        "row_frequency": "session",
-        "configuration": {
-            "inputs": inputs,
-            "outputs": outputs,
-            "executable": str(mock_bids_app_executable),
+        "task": {
+            "type": "bidsapp",
+            "app": str(mock_bids_app_executable),
+            "inputs": {
+                "T1w": {
+                    "path": "anat/T1w",
+                    "type": "medimage/nifti-gz-x",
+                    "help": "T1-weighted image",
+                },
+                "T2w": {
+                    "path": "anat/T2w",
+                    "type": "medimage/nifti-gz-x",
+                    "help": "T2-weighted image",
+                },
+                "DWI": {
+                    "path": "dwi/dwi",
+                    "type": "medimage/nifti-gz-x-bvec",
+                    "help": "DWI-weighted image",
+                },
+            },
+            "outputs": {
+                "file1": {
+                    "path": "file1",
+                    "type": "text/text-file",
+                    "help": "an output file",
+                },
+                "file2": {
+                    "path": "file2",
+                    "type": "text/text-file",
+                    "help": "another output file",
+                },
+            },
         },
+        "row_frequency": "session",
     }
 
 

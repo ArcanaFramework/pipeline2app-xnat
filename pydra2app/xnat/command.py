@@ -2,7 +2,8 @@ from __future__ import annotations
 import typing as ty
 import re
 import attrs
-from fileformats.core import FileSet, to_mime
+from fileformats.core import to_mime
+from pydra.utils.typing import is_fileset_or_union
 from pydra2app.core.command.base import ContainerCommand
 from frametree.xnat import XnatViaCS
 from frametree.core.axes import Axes
@@ -121,25 +122,25 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         """
         # Add task inputs to inputs JSON specification
         cmd_args = []
-        for inpt in self.inputs:
-            replacement_key = f"[{inpt.field.upper()}_INPUT]"
-            if issubclass(inpt.datatype, FileSet):
-                if inpt.column_defaults.datatype:
-                    datatype = inpt.column_defaults.datatype
-                else:
-                    datatype = inpt.datatype
-                desc = f"Match resource ({to_mime(datatype)}) [SCAN-TYPE]: {inpt.help} "
+        for inpt in self.input_fields:
+            replacement_key = f"[{inpt.name.upper()}_INPUT]"
+            if is_fileset_or_union(inpt.type):
+                column_datatype = inpt.type.convertible_from()
+                desc = (
+                    f"Match resource ({to_mime(column_datatype, official=False)}) "
+                    f"[SCAN-TYPE]: {inpt.help} "
+                )
                 input_type = "string"
             else:
-                desc = f"Match field ({inpt.datatype}) [FIELD-NAME]: {inpt.help} "
-                input_type = self.COMMAND_INPUT_TYPES.get(inpt.datatype, "string")
+                desc = f"Match field ({inpt.type}) [FIELD-NAME]: {inpt.help} "
+                input_type = self.COMMAND_INPUT_TYPES.get(inpt.type, "string")
             cmd_json["inputs"].append(
                 {
                     "name": self.path2xnatname(inpt.name),
                     "description": desc,
                     "type": input_type,
-                    "default-value": inpt.config_dict.get("path", ""),
-                    "required": False,
+                    "default-value": f"<{inpt.name}>",  # the column of the same name
+                    "required": inpt.mandatory,
                     "user-settable": True,
                     "replacement-key": replacement_key,
                 }
@@ -152,18 +153,23 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
 
         # Add parameters as additional inputs to inputs JSON specification
         cmd_args = []
-        for param in self.parameters:
-            desc = f"Parameter ({param.datatype}): " + param.help
+        for param in self.parameter_fields:
 
-            replacement_key = f"[{param.field.upper()}_PARAM]"
+            desc = f"Parameter ({param.type}): " + param.help
+
+            replacement_key = f"[{param.name.upper()}_PARAM]"
 
             cmd_json["inputs"].append(
                 {
                     "name": param.name,
                     "description": desc,
-                    "type": self.COMMAND_INPUT_TYPES.get(param.datatype, "string"),
-                    "default-value": (param.default if param.default else ""),
-                    "required": param.required,
+                    "type": self.COMMAND_INPUT_TYPES.get(param.type, "string"),
+                    "default-value": (
+                        param.default
+                        if param.default and not hasattr(param.default, "factory")
+                        else ""
+                    ),
+                    "required": param.mandatory,
                     "user-settable": True,
                     "replacement-key": replacement_key,
                 }
@@ -174,16 +180,13 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
 
     def add_output_fields(self, cmd_json: ty.Dict[str, ty.Any]) -> ty.List[str]:
 
+        input_names = [i["name"] for i in cmd_json["inputs"]]
         # Set up output handlers and arguments
         cmd_args = []
-        for output in self.outputs:
-            out_fname = output.name + (
-                output.datatype.ext if output.datatype.ext else ""
-            )
+        for output in self.output_fields:
+            out_fname = output.name + (output.type.ext if output.type.ext else "")
 
-            desc = (
-                f"Output ({to_mime(output.datatype, official=False)}): " + output.help
-            )
+            desc = f"Output ({to_mime(output.type, official=False)}): " + output.help
             # Set the path to the
             if self.internal_upload:
                 cmd_json["outputs"].append(
@@ -207,17 +210,24 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                         # the "dataset_name" to it as we do in the API put. Might be worth
                         # just dropping XNAT outputs and just using API
                         "label": path2label(output.name),
-                        "format": output.datatype.mime_like,
+                        "format": output.type.mime_like,
                     }
                 )
                 cmd_args.append(f"--output {output.name} '{output.name}'")
             else:
-                replacement_key = f"[{output.field.upper()}_OUTPUT]"
+                if output.name in input_names:
+                    raise ValueError(
+                        "Cannot create output field with the same name as an input "
+                        f"{output.name!r}, you can work around this problem by fixing "
+                        "the input field in the command's configuration if it is ok to "
+                        "fix."
+                    )
+                replacement_key = f"[{output.name.upper()}_OUTPUT]"
                 cmd_json["inputs"].append(
                     {
                         "name": output.name,
                         "description": desc,
-                        "type": self.COMMAND_INPUT_TYPES.get(output.datatype, "string"),
+                        "type": self.COMMAND_INPUT_TYPES.get(output.type, "string"),
                         "default-value": output.name,
                         "required": False,
                         "user-settable": True,
