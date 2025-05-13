@@ -22,7 +22,7 @@ from imageio.core.fetching import get_remote_file
 import xnat4tests
 import medimages4tests.dummy.nifti
 import medimages4tests.dummy.dicom.mri.fmap.siemens.skyra.syngo_d13c
-from pipeline2app.core.image.base import BaseImage
+from pydra2app.core.image.base import BaseImage
 from frametree.common import Clinical
 from frametree.core.frameset import FrameSet
 from fileformats.medimage import NiftiGzX, NiftiGz, DicomSeries, NiftiX
@@ -67,7 +67,7 @@ PKG_DIR = Path(__file__).parent
 
 log_level = logging.WARNING
 
-logger = logging.getLogger("pipeline2app")
+logger = logging.getLogger("pydra2app")
 logger.setLevel(log_level)
 
 sch = logging.StreamHandler()
@@ -76,7 +76,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 sch.setFormatter(formatter)
 logger.addHandler(sch)
 
-logger = logging.getLogger("pipeline2app")
+logger = logging.getLogger("pydra2app")
 logger.setLevel(log_level)
 
 sch = logging.StreamHandler()
@@ -297,10 +297,10 @@ TEST_XNAT_DATASET_BLUEPRINTS = {
         ],
         derivatives=[
             FileBP(
-                path="concatenated_file",
+                path="out_file",
                 row_frequency=Clinical.session,
                 datatype=Text,
-                filenames=["concatenated_file_sink.txt"],
+                filenames=["out_file_sink.txt"],
             )
         ],
     ),
@@ -524,104 +524,56 @@ def dummy_niftix(work_dir: Path) -> NiftiX:
 @pytest.fixture(scope="session")
 def command_spec() -> ty.Dict[str, ty.Any]:
     return {
-        "task": "frametree.testing.tasks:concatenate",
-        "inputs": {
-            "first_file": {
-                "datatype": "text/text-file",
-                "field": "in_file1",
-                "column_defaults": {
-                    "row_frequency": "session",
-                },
-                "help": "the first file to pass as an input",
-            },
-            "second_file": {
-                "datatype": "text/text-file",
-                "field": "in_file2",
-                "column_defaults": {
-                    "row_frequency": "session",
-                },
-                "help": "the second file to pass as an input",
-            },
-        },
-        "outputs": {
-            "concatenated_file": {
-                "datatype": "text/text-file",
-                "field": "out_file",
-                "help": "an output file",
-            }
-        },
-        "parameters": {
-            "number_of_duplicates": {
-                "field": "duplicates",
-                "default": 2,
-                "datatype": "int",
-                "required": True,
-                "help": "a parameter",
-            }
-        },
+        "task": "frametree.testing.tasks:Concatenate",
+        "parameters": ["duplicates"],
         "row_frequency": "common:Clinical[session]",
     }
 
 
 BIDS_VALIDATOR_DOCKER = "bids/validator:latest"
 SUCCESS_STR = "This dataset appears to be BIDS compatible"
-MOCK_BIDS_APP_IMAGE = "pipeline2app-mock-bids-app"
-BIDS_VALIDATOR_APP_IMAGE = "pipeline2app-bids-validator-app"
+MOCK_BIDS_APP_IMAGE = "pydra2app-mock-bids-app"
+BIDS_VALIDATOR_APP_IMAGE = "pydra2app-bids-validator-app"
 
 
 @pytest.fixture(scope="session")
 def bids_command_spec(mock_bids_app_executable: str) -> ty.Dict[str, ty.Any]:
-    inputs = {
-        "T1w": {
-            "configuration": {
-                "path": "anat/T1w",
-            },
-            "datatype": "medimage/nifti-gz-x",
-            "help": "T1-weighted image",
-        },
-        "T2w": {
-            "configuration": {
-                "path": "anat/T2w",
-            },
-            "datatype": "medimage/nifti-gz-x",
-            "help": "T2-weighted image",
-        },
-        "DWI": {
-            "configuration": {
-                "path": "dwi/dwi",
-            },
-            "datatype": "medimage/nifti-gz-x-bvec",
-            "help": "DWI-weighted image",
-        },
-    }
-
-    outputs = {
-        "file1": {
-            "configuration": {
-                "path": "file1",
-            },
-            "datatype": "text/text-file",
-            "help": "an output file",
-        },
-        "file2": {
-            "configuration": {
-                "path": "file2",
-            },
-            "datatype": "text/text-file",
-            "help": "another output file",
-        },
-    }
 
     return {
-        "task": "frametree.bids.tasks:bids_app",
-        "inputs": inputs,
-        "outputs": outputs,
-        "row_frequency": "session",
-        "configuration": {
-            "inputs": inputs,
-            "outputs": outputs,
-            "executable": str(mock_bids_app_executable),
+        "task": {
+            "type": "bidsapp",
+            "app": str(mock_bids_app_executable),
+            "inputs": {
+                "T1w": {
+                    "path": "anat/T1w",
+                    "type": "medimage/nifti-gz-x",
+                    "help": "T1-weighted image",
+                },
+                "T2w": {
+                    "path": "anat/T2w",
+                    "type": "medimage/nifti-gz-x",
+                    "help": "T2-weighted image",
+                },
+                "DWI": {
+                    "path": "dwi/dwi",
+                    "type": "medimage/nifti-gz-x-bvec",
+                    "help": "DWI-weighted image",
+                },
+            },
+            "outputs": {
+                "file1": {
+                    "path": "file1",
+                    "type": "text/text-file",
+                    "help": "an output file",
+                },
+                "file2": {
+                    "path": "file2",
+                    "type": "text/text-file",
+                    "help": "another output file",
+                },
+            },
         },
+        "row_frequency": "session",
     }
 
 

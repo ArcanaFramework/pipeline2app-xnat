@@ -2,7 +2,7 @@ from operator import mul
 from functools import reduce
 import random
 import pytest
-from pipeline2app.xnat import XnatCommand
+from pydra2app.xnat import XnatCommand
 from conftest import TEST_XNAT_DATASET_BLUEPRINTS, access_dataset
 
 
@@ -37,17 +37,17 @@ def test_command_execute(
     command.execute(
         address=dataset.locator,
         input_values=[
-            ("first_file", "scan1"),
-            ("second_file", "scan2"),
+            ("in_file1", "scan1"),
+            ("in_file2", "scan2"),
         ],
         output_values=[
-            ("concatenated_file", "sink_file"),
+            ("out_file", "sink_file"),
         ],
         parameter_values=[
-            ("number_of_duplicates", str(duplicates)),
+            ("duplicates", str(duplicates)),
         ],
         raise_errors=True,
-        plugin="serial",
+        worker="debug",
         work_dir=str(work_dir),
         loglevel="debug",
         dataset_hierarchy=",".join(bp.hierarchy),

@@ -10,9 +10,9 @@ from conftest import (
     access_dataset,
 )
 from frametree.xnat import Xnat
-from pipeline2app.xnat.image import XnatApp
-from pipeline2app.xnat.command import XnatCommand
-from pipeline2app.xnat.deploy import (
+from pydra2app.xnat.image import XnatApp
+from pydra2app.xnat.command import XnatCommand
+from pydra2app.xnat.deploy import (
     install_and_launch_xnat_cs_command,
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
@@ -44,10 +44,10 @@ def run_spec(
     if task == "func":
         cmd_spec = command_spec
         spec["build"] = {
-            "org": "pipeline2app-tests",
+            "org": "pydra2app-tests",
             "name": run_prefix + "-concatenate-xnat-cs",
             "version": "1.0",
-            "title": "A pipeline to test Pipeline2app's deployment tool",
+            "title": "A pipeline to test Pydra2App's deployment tool",
             "commands": {"concatenate-test": command_spec},
             "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
             "docs": {
@@ -64,9 +64,9 @@ def run_spec(
                     "fileformats-medimage-extras",
                     "frametree",
                     "frametree-xnat",
-                    "pipeline2app",
-                    "pipeline2app-xnat",
                     "pydra",
+                    "pydra2app",
+                    "pydra2app-xnat",
                 ],
             },
         }
@@ -79,12 +79,12 @@ def run_spec(
         spec["dataset"] = access_dataset(
             project_id, access_method, xnat_repository, xnat_archive_dir, run_prefix
         )
-        spec["params"] = {"number_of_duplicates": 2}
+        spec["params"] = {"duplicates": 2}
     elif task == "bidsapp":
-        bids_command_spec["configuration"]["executable"] = "/launch.sh"
+        bids_command_spec["configuration"] = {"app": "/launch.sh"}
         cmd_spec = bids_command_spec
         spec["build"] = {
-            "org": "pipeline2app-tests",
+            "org": "pydra2app-tests",
             "name": run_prefix + "-bids-app-xnat-cs",
             "version": "1.0",
             "title": "A pipeline to test wrapping of BIDS apps",
@@ -103,8 +103,9 @@ def run_spec(
                     "frametree-bids",
                     "frametree-xnat",
                     "pydra",
-                    "pipeline2app",
-                    "pipeline2app-xnat",
+                    "pydra2app",
+                    "pydra2app-xnat",
+                    "pydra-compose-bidsapp",
                 ],
             },
             "commands": {"bids-test-command": bids_command_spec},
@@ -201,7 +202,7 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
     image_spec.make(
         build_dir=work_dir,
-        pipeline2app_install_extras=["test"],
+        pydra2app_install_extras=["test"],
         use_local_packages=True,
         for_localhost=True,
     )
@@ -225,9 +226,9 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
     if cmd.internal_upload:
         # If using internal upload, the output names are fixed
-        output_values = {o: o for o in cmd.output_names}
+        output_values = {o: o for o in cmd.outputs}
     else:
-        output_values = {o: o + "_sink" for o in cmd.output_names}
+        output_values = {o: o + "_sink" for o in cmd.outputs}
         launch_inputs.update(output_values)
 
     with xnat_repository.connection:
@@ -257,7 +258,7 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
         for output_name, sinked_name in output_values.items():
             deriv = next(d for d in blueprint.derivatives if d.path == output_name)
             uploaded_files = sorted(
-                Path(f).name.lstrip("sub-DEFAULT_")
+                f.name.lstrip("sub-DEFAULT_")
                 for f in test_xsession.resources[sinked_name].files
             )
             if cmd.internal_upload:
@@ -295,44 +296,16 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
 
     two_dup_spec = dict(
         name="concatenate",
-        task="pipeline2app.testing.tasks:concatenate",
+        task="frametree.testing.tasks:Concatenate",
         row_frequency=Clinical.session.tostr(),
-        inputs=[
-            {
-                "name": "first_file",
-                "datatype": "text/text-file",
-                "field": "in_file1",
-                "help": "dummy",
-            },
-            {
-                "name": "second_file",
-                "datatype": "text/text-file",
-                "field": "in_file2",
-                "help": "dummy",
-            },
-        ],
-        outputs=[
-            {
-                "name": "concatenated",
-                "datatype": "text/text-file",
-                "field": "out_file",
-                "help": "dummy",
-            }
-        ],
-        parameters={
-            "duplicates": {
-                "datatype": "field/integer",
-                "default": 2,
-                "help": "dummy",
-            }
-        },
+        configuration={"duplicates": 2},
     )
 
     three_dup_spec = deepcopy(two_dup_spec)
-    three_dup_spec["parameters"]["duplicates"]["default"] = 3
+    three_dup_spec["configuration"]["duplicates"] = 3
 
     test_spec = {
-        "name": "test_multi_commands",
+        "name": run_prefix + "test_multi_commands",
         "title": "a test image for multi-image commands",
         "commands": {
             "two_duplicates": two_dup_spec,
@@ -340,12 +313,18 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
         },
         "version": "1.0",
         "packages": {
-            "system": ["vim"],  # just to test it out
-            "pip": {
-                "fileformats": None,
-                "pipeline2app": None,
-                "frametree": None,
-            },
+            "system": ["vim", "git"],  # just to test it out
+            "pip": [  # Ensure that development packages are installed if present
+                "fileformats",
+                "fileformats-extras",
+                "fileformats-medimage",
+                "fileformats-medimage-extras",
+                "frametree",
+                "frametree-xnat",
+                "pydra",
+                "pydra2app",
+                "pydra2app-xnat",
+            ],
         },
         "authors": [{"name": "Some One", "email": "some.one@an.email.org"}],
         "docs": {
@@ -357,7 +336,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
 
     app.make(
         build_dir=tmp_path / "build-dir",
-        pipeline2app_install_extras=["test"],
+        pydra2app_install_extras=["test"],
         use_local_packages=True,
         for_localhost=True,
     )
@@ -365,8 +344,8 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
     fnames = ["file1.txt", "file2.txt"]
 
     base_launch_inputs = {
-        "first_file": "scan1",
-        "second_file": "scan2",
+        "in_file1": "scan1",
+        "in_file2": "scan2",
     }
 
     command_names = ["two_duplicates", "three_duplicates"]
@@ -377,7 +356,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
         for command_name in command_names:
 
             launch_inputs = deepcopy(base_launch_inputs)
-            launch_inputs["concatenated"] = command_name
+            launch_inputs["out_file"] = command_name
 
             workflow_id, status, out_str = install_and_launch_xnat_cs_command(
                 command_json=app.command(command_name).make_json(),

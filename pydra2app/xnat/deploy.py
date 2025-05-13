@@ -3,13 +3,13 @@ import time
 import logging
 import json
 import xnat
-from pipeline2app.core.exceptions import Pipeline2appError
-from pipeline2app.core.utils import extract_file_from_docker_image
+from pydra2app.core.exceptions import Pydra2AppError
+from pydra2app.core.utils import extract_file_from_docker_image
 
 
-logger = logging.getLogger("pipeline2app-xnat")
+logger = logging.getLogger("pydra2app-xnat")
 
-INTERNAL_INPUTS = ("Pipeline2app_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
+INTERNAL_INPUTS = ("Pydra2App_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
 
 
 def install_cs_command(
@@ -75,7 +75,14 @@ def install_cs_command(
                 xlogin.delete(f"/xapi/commands/{cmd['id']}", accepted_status=[200, 204])
                 logger.info(f"Deleted existing command '{cmd_name}'")
 
-    cmd_id: int = xlogin.post("/xapi/commands", json=command_json).json()
+    try:
+        cmd_id: int = xlogin.post("/xapi/commands", json=command_json).json()
+    except xnat.exceptions.XNATResponseError as e:
+        e.add_note(
+            f"Attempting to install command '{cmd_name}' with JSON:\n"
+            + json.dumps(command_json, indent=4)
+        )
+        raise e
 
     # Enable the command globally and in the project
     if enable:
@@ -187,7 +194,7 @@ def launch_cs_command(
     ).json()
 
     if launch_result["status"] != "success":
-        raise Pipeline2appError(
+        raise Pydra2AppError(
             f"{cmd_name} workflow wasn't launched successfully ({launch_result['status']})"
         )
     workflow_id = launch_result["workflow-id"]
@@ -202,34 +209,36 @@ def launch_cs_command(
             break
         time.sleep(poll_interval)
 
-    launch_status = wf_result["status"]
-    if launch_status != "Complete":
-        raise ValueError(
-            f"Launching {cmd_name} in the XNAT CS failed with status {launch_status} "
-            f"for inputs: \n{launch_json}"
-        )
-
-    container_id = wf_result["comments"]
-    assert container_id != ""
-
-    # Get workflow stdout/stderr for error messages if required
-    out_str = ""
-    stdout_result = xlogin.get(
-        f"/xapi/containers/{container_id}/logs/stdout", accepted_status=[200, 204]
-    )
-    if stdout_result.status_code == 200:
-        out_str = f"stdout:\n{stdout_result.content.decode('utf-8')}\n"  # noqa
-
-    stderr_result = xlogin.get(
-        f"/xapi/containers/{container_id}/logs/stderr", accepted_status=[200, 204]
-    )
-    if stderr_result.status_code == 200:
-        out_str += f"\nstderr:\n{stderr_result.content.decode('utf-8')}"  # noqa
-
     if i == num_attempts - 1:
         status = f"NotCompletedAfter{max_runtime}Seconds"
     else:
         status = wf_result["status"]
+
+    # Get logs
+    out_str = ""
+    container_id = wf_result["comments"]
+    if container_id:
+        # Get workflow stdout/stderr for error messages if required
+
+        stdout_result = xlogin.get(
+            f"/xapi/containers/{container_id}/logs/StdOut.log",
+            accepted_status=[200, 204],
+        )
+        if stdout_result.status_code == 200:
+            out_str += f"stdout:\n{stdout_result.text}\n"  # noqa
+
+        stderr_result = xlogin.get(
+            f"/xapi/containers/{container_id}/logs/StdErr.log",
+            accepted_status=[200, 204],
+        )
+        if stderr_result.status_code == 200:
+            out_str += f"\nstderr:\n{stderr_result.text}"  # noqa
+
+    if status != "Complete":
+        raise ValueError(
+            f"Launching {cmd_name} in the XNAT CS failed with status {status} "
+            f"for inputs=\n{launch_json}:\n{out_str}"
+        )
 
     return workflow_id, status, out_str
 
