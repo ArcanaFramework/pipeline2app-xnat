@@ -54,7 +54,8 @@ def install_cs_command(
         )
         if command_json_file is None:
             raise RuntimeError(
-                f"Could not find command JSON file in '{image_name_or_command_json}'"
+                f"Could not find {command_name!r} command JSON file in "
+                f"{image_name_or_command_json!r}"
             )
         with open(command_json_file) as f:
             command_json = json.load(f)
@@ -256,8 +257,6 @@ def install_and_launch_xnat_cs_command(
 
     Parameters
     ----------
-    cmd_name : str
-        The name to install the command as
     command_json : ty.Dict[str, Any]
         JSON that defines the XNAT command in the container service (see `generate_xnat_command`)
     project_id : str

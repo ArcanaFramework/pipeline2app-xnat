@@ -23,6 +23,29 @@ def test_make(cli_runner):
     assert result.exit_code == 0, show_cli_trace(result)
 
 
+def test_phi_finder(cli_runner):
+
+    result = cli_runner(
+        make,
+        [
+            "xnat",
+            (
+                "/Users/tclose/git/workflows/pipelines/specs/"
+                "australian-imaging-service/quality-control/phi-finder.yaml"
+            ),
+            "--spec-root",
+            "/Users/tclose/git/workflows/pipelines/specs",
+            "--registry",
+            "ghcr.io",
+            "--build-dir",
+            "/Users/tclose/Desktop/phi-phinder-build",
+            "--raise-errors",
+        ],
+    )
+
+    assert result.exit_code == 0, show_cli_trace(result)
+
+
 def test_save_token(cli_runner):
 
     result = cli_runner(
