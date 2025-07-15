@@ -244,14 +244,14 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
     def add_pydra2app_flags_field(self, cmd_json: ty.Dict[str, ty.Any]) -> str:
 
         # Add input for dataset name
-        FLAGS_KEY = "#PIPELINE2APP_FLAGS#"
+        FLAGS_KEY = "#PYDRA2APP_FLAGS#"
         cmd_json["inputs"].append(
             {
                 "name": "Pydra2App_flags",
                 "description": "Flags passed to `run-pydra2app-pipeline` command",
                 "type": "string",
                 "default-value": (
-                    "--plugin cf "
+                    "--worker cf "
                     "--work /wl "  # noqa NB: work dir moved inside container due to file-locking issue on some mounted volumes (see https://github.com/tox-dev/py-filelock/issues/147)
                     "--dataset-name default "
                     "--loglevel info "
