@@ -9,7 +9,7 @@ from pydra2app.core.utils import extract_file_from_docker_image
 
 logger = logging.getLogger("pydra2app-xnat")
 
-INTERNAL_INPUTS = ("Pydra2App_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
+INTERNAL_INPUTS = ("pydra2app_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
 
 
 def install_cs_command(
@@ -166,7 +166,7 @@ def launch_cs_command(
         "SESSION": f"/archive/projects/{project_id}/experiments/{session_id}"
     }
 
-    provided_inputs = list(inputs.keys())
+    provided_inputs = [k for k in inputs if k not in INTERNAL_INPUTS]
     input_names = [
         i["name"] for i in command_json["inputs"] if i["name"] not in INTERNAL_INPUTS
     ]

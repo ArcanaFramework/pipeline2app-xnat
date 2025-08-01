@@ -247,7 +247,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         FLAGS_KEY = "#PYDRA2APP_FLAGS#"
         cmd_json["inputs"].append(
             {
-                "name": "Pydra2App_flags",
+                "name": "pydra2app_flags",
                 "description": "Flags passed to `run-pydra2app-pipeline` command",
                 "type": "string",
                 "default-value": (
