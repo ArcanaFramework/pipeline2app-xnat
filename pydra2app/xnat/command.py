@@ -5,6 +5,7 @@ import attrs
 from fileformats.core import to_mime
 from pydra.utils.typing import is_fileset_or_union
 from pydra2app.core.command.base import ContainerCommand
+from pydra2app.core.utils import logger
 from frametree.xnat import XnatViaCS
 from frametree.core.axes import Axes
 from frametree.core.utils import path2label
@@ -184,6 +185,9 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         # Set up output handlers and arguments
         cmd_args = []
         for output in self.output_fields:
+            if not is_fileset_or_union(output.type):
+                logger.debug("Skipping output %s, not a fileset", output.name)
+                continue
             out_fname = output.name + (output.type.ext if output.type.ext else "")
 
             desc = f"Output ({to_mime(output.type, official=False)}): " + output.help
