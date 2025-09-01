@@ -17,7 +17,7 @@ from pydra2app.xnat.deploy import (
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
 from fileformats.text import Plain as Text
-from frametree.common import Clinical
+from frametree.axes.medimage import MedImage
 
 
 PIPELINE_NAME = "test-concatenate"
@@ -160,13 +160,13 @@ def run_spec(
             derivatives=[
                 FileBP(
                     path="file1",
-                    row_frequency=Clinical.session,
+                    row_frequency=MedImage.session,
                     datatype=Text,
                     filenames=["file1_sink.txt"],
                 ),
                 FileBP(
                     path="file2",
-                    row_frequency=Clinical.session,
+                    row_frequency=MedImage.session,
                     datatype=Text,
                     filenames=["file2_sink.txt"],
                 ),
@@ -297,7 +297,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
     two_dup_spec = dict(
         name="concatenate",
         task="frametree.testing.tasks:Concatenate",
-        row_frequency=Clinical.session.tostr(),
+        row_frequency=MedImage.session.tostr(),
         configuration={"duplicates": 2},
     )
 

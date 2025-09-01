@@ -9,7 +9,7 @@ from pydra2app.core.utils import logger
 from frametree.xnat import XnatViaCS
 from frametree.core.axes import Axes
 from frametree.core.utils import path2label
-from frametree.common import Clinical
+from frametree.axes.medimage import MedImage
 
 
 if ty.TYPE_CHECKING:
@@ -22,8 +22,8 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
     image: XnatApp = attrs.field(default=None)
     internal_upload: bool = attrs.field(default=False)
 
-    # Hard-code the axes of XNAT commands to be clinical
-    AXES: ty.Optional[ty.Type[Axes]] = Clinical
+    # Hard-code the axes of XNAT commands to be medimage
+    AXES: ty.Optional[ty.Type[Axes]] = MedImage
 
     def make_json(self) -> ty.Dict[str, ty.Any]:
         """Constructs the XNAT CS "command" JSON config, which specifies how XNAT
@@ -289,7 +289,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         )
 
         # Access session via Container service args and derive
-        if self.row_frequency == Clinical.session:
+        if self.operates_on == MedImage.session:
             # Set the object the pipeline is to be run against
             cmd_json["xnat"][0]["contexts"] = ["xnat:imageSessionData"]
             # Create Session input that  can be passed to the command line, which
@@ -382,4 +382,4 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         return re.sub(r"[^a-zA-Z0-9_]+", "_", path)
 
     COMMAND_INPUT_TYPES = {bool: "bool", str: "string", int: "number", float: "number"}
-    VALID_FREQUENCIES = (Clinical.session, Clinical.constant)
+    VALID_FREQUENCIES = (MedImage.session, MedImage.constant)
