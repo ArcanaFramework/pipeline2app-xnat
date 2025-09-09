@@ -525,7 +525,7 @@ def dummy_niftix(work_dir: Path) -> NiftiX:
 def command_spec() -> ty.Dict[str, ty.Any]:
     return {
         "task": "frametree.testing.tasks:Concatenate",
-        "parameters": ["duplicates"],
+        # "parameters": ["duplicates"],
         "operates_on": "medimage/session",
     }
 
