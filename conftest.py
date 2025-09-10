@@ -23,7 +23,7 @@ import xnat4tests
 import medimages4tests.dummy.nifti
 import medimages4tests.dummy.dicom.mri.fmap.siemens.skyra.syngo_d13c
 from pydra2app.core.image.base import BaseImage
-from frametree.common import Clinical
+from frametree.axes.medimage import MedImage
 from frametree.core.frameset import FrameSet
 from fileformats.medimage import NiftiGzX, NiftiGz, DicomSeries, NiftiX
 from fileformats.text import Plain as Text
@@ -195,25 +195,25 @@ TEST_XNAT_DATASET_BLUEPRINTS = {
         derivatives=[
             FileBP(
                 path="deriv1",
-                row_frequency=Clinical.visit,
+                row_frequency=MedImage.visit,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
             FileBP(
                 path="deriv2",
-                row_frequency=Clinical.subject,
+                row_frequency=MedImage.subject,
                 datatype=NiftiGzX,
                 filenames=["nifti/anat/T1w.nii.gz", "nifti/anat/T1w.json"],
             ),
             FileBP(
                 path="deriv3",
-                row_frequency=Clinical.groupedvisit,
+                row_frequency=MedImage.groupedvisit,
                 datatype=Directory,
                 filenames=["dir"],
             ),
             FileBP(
                 path="deriv4",
-                row_frequency=Clinical.constant,
+                row_frequency=MedImage.constant,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
@@ -235,49 +235,49 @@ TEST_XNAT_DATASET_BLUEPRINTS = {
         derivatives=[
             FileBP(
                 path="deriv1",
-                row_frequency=Clinical.session,
+                row_frequency=MedImage.session,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
             FileBP(
                 path="deriv2",
-                row_frequency=Clinical.subject,
+                row_frequency=MedImage.subject,
                 datatype=NiftiGzX,
                 filenames=["nifti/anat/T2w.nii.gz", "nifti/anat/T2w.json"],
             ),
             FileBP(
                 path="deriv3",
-                row_frequency=Clinical.visit,
+                row_frequency=MedImage.visit,
                 datatype=Directory,
                 filenames=["doubledir"],
             ),
             FileBP(
                 path="deriv4",
-                row_frequency=Clinical.member,
+                row_frequency=MedImage.member,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
             FileBP(
                 path="deriv5",
-                row_frequency=Clinical.constant,
+                row_frequency=MedImage.constant,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
             FileBP(
                 path="deriv6",
-                row_frequency=Clinical.groupedvisit,
+                row_frequency=MedImage.groupedvisit,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
             FileBP(
                 path="deriv7",
-                row_frequency=Clinical.matchedvisit,
+                row_frequency=MedImage.matchedvisit,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
             FileBP(
                 path="deriv8",
-                row_frequency=Clinical.group,
+                row_frequency=MedImage.group,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
@@ -298,7 +298,7 @@ TEST_XNAT_DATASET_BLUEPRINTS = {
         derivatives=[
             FileBP(
                 path="out_file",
-                row_frequency=Clinical.session,
+                row_frequency=MedImage.session,
                 datatype=Text,
                 filenames=["out_file_sink.txt"],
             )
@@ -398,7 +398,7 @@ def access_dataset(
             user=xnat_repository.user,
             password=xnat_repository.password,
             cache_dir=xnat_repository.cache_dir,
-            row_frequency=Clinical.constant,
+            row_frequency=MedImage.constant,
             input_mount=proj_dir,
             output_mount=Path(mkdtemp()),
             internal_upload=access_method.endswith("internal"),
@@ -525,8 +525,8 @@ def dummy_niftix(work_dir: Path) -> NiftiX:
 def command_spec() -> ty.Dict[str, ty.Any]:
     return {
         "task": "frametree.testing.tasks:Concatenate",
-        "parameters": ["duplicates"],
-        "row_frequency": "common:Clinical[session]",
+        # "parameters": ["duplicates"],
+        "operates_on": "medimage/session",
     }
 
 
@@ -573,7 +573,7 @@ def bids_command_spec(mock_bids_app_executable: str) -> ty.Dict[str, ty.Any]:
                 },
             },
         },
-        "row_frequency": "session",
+        "operates_on": "session",
     }
 
 

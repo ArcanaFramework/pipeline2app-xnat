@@ -17,7 +17,7 @@ from pydra2app.xnat.deploy import (
 )
 from fileformats.medimage import NiftiGzX, NiftiGzXBvec
 from fileformats.text import Plain as Text
-from frametree.common import Clinical
+from frametree.axes.medimage import MedImage
 
 
 PIPELINE_NAME = "test-concatenate"
@@ -160,13 +160,13 @@ def run_spec(
             derivatives=[
                 FileBP(
                     path="file1",
-                    row_frequency=Clinical.session,
+                    row_frequency=MedImage.session,
                     datatype=Text,
                     filenames=["file1_sink.txt"],
                 ),
                 FileBP(
                     path="file2",
-                    row_frequency=Clinical.session,
+                    row_frequency=MedImage.session,
                     datatype=Text,
                     filenames=["file2_sink.txt"],
                 ),
@@ -226,9 +226,9 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
     if cmd.internal_upload:
         # If using internal upload, the output names are fixed
-        output_values = {o: o for o in cmd.outputs}
+        output_values = {s: s for s in cmd.sink_names}
     else:
-        output_values = {o: o + "_sink" for o in cmd.outputs}
+        output_values = {s: s + "_sink" for s in cmd.sink_names}
         launch_inputs.update(output_values)
 
     with xnat_repository.connection:
@@ -297,7 +297,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
     two_dup_spec = dict(
         name="concatenate",
         task="frametree.testing.tasks:Concatenate",
-        row_frequency=Clinical.session.tostr(),
+        operates_on=MedImage.session.tostr(),
         configuration={"duplicates": 2},
     )
 
@@ -346,6 +346,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
     base_launch_inputs = {
         "in_file1": "scan1",
         "in_file2": "scan2",
+        "pydra2app_flags": "--save-frameset",
     }
 
     command_names = ["two_duplicates", "three_duplicates"]

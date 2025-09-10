@@ -5,10 +5,11 @@ import attrs
 from fileformats.core import to_mime
 from pydra.utils.typing import is_fileset_or_union
 from pydra2app.core.command.base import ContainerCommand
+from pydra2app.core.utils import logger
 from frametree.xnat import XnatViaCS
 from frametree.core.axes import Axes
 from frametree.core.utils import path2label
-from frametree.common import Clinical
+from frametree.axes.medimage import MedImage
 
 
 if ty.TYPE_CHECKING:
@@ -21,8 +22,8 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
     image: XnatApp = attrs.field(default=None)
     internal_upload: bool = attrs.field(default=False)
 
-    # Hard-code the axes of XNAT commands to be clinical
-    AXES: ty.Optional[ty.Type[Axes]] = Clinical
+    # Hard-code the axes of XNAT commands to be medimage
+    AXES: ty.Optional[ty.Type[Axes]] = MedImage
 
     def make_json(self) -> ty.Dict[str, ty.Any]:
         """Constructs the XNAT CS "command" JSON config, which specifies how XNAT
@@ -122,30 +123,30 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         """
         # Add task inputs to inputs JSON specification
         cmd_args = []
-        for inpt in self.input_fields:
-            replacement_key = f"[{inpt.name.upper()}_INPUT]"
-            if is_fileset_or_union(inpt.type):
-                column_datatype = inpt.type.convertible_from()
+        for src in self.sources:
+            replacement_key = f"[{src.name.upper()}_INPUT]"
+            if is_fileset_or_union(src.type):
+                column_datatype = src.type.convertible_from()
                 desc = (
                     f"Match resource ({to_mime(column_datatype, official=False)}) "
-                    f"[SCAN-TYPE]: {inpt.help} "
+                    f"[SCAN-TYPE]: {src.help} "
                 )
                 input_type = "string"
             else:
-                desc = f"Match field ({inpt.type}) [FIELD-NAME]: {inpt.help} "
-                input_type = self.COMMAND_INPUT_TYPES.get(inpt.type, "string")
+                desc = f"Match field ({src.type}) [FIELD-NAME]: {src.help} "
+                input_type = self.COMMAND_INPUT_TYPES.get(src.type, "string")
             cmd_json["inputs"].append(
                 {
-                    "name": self.path2xnatname(inpt.name),
+                    "name": self.path2xnatname(src.name),
                     "description": desc,
                     "type": input_type,
-                    "default-value": f"<{inpt.name}>",  # the column of the same name
-                    "required": inpt.mandatory,
+                    "default-value": f"<{src.name}>",  # the column of the same name
+                    "required": src.mandatory,
                     "user-settable": True,
                     "replacement-key": replacement_key,
                 }
             )
-            cmd_args.append(f"--input {inpt.name} '{replacement_key}'")
+            cmd_args.append(f"--input {src.name} '{replacement_key}'")
 
         return cmd_args
 
@@ -153,7 +154,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
 
         # Add parameters as additional inputs to inputs JSON specification
         cmd_args = []
-        for param in self.parameter_fields:
+        for param in self.parameters:
 
             desc = f"Parameter ({param.type}): " + param.help
 
@@ -165,8 +166,9 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                     "description": desc,
                     "type": self.COMMAND_INPUT_TYPES.get(param.type, "string"),
                     "default-value": (
-                        param.default
-                        if param.default and not hasattr(param.default, "factory")
+                        param._field_object.default
+                        if param._field_object.default
+                        and not hasattr(param._field_object.default, "factory")
                         else ""
                     ),
                     "required": param.mandatory,
@@ -183,15 +185,18 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         input_names = [i["name"] for i in cmd_json["inputs"]]
         # Set up output handlers and arguments
         cmd_args = []
-        for output in self.output_fields:
-            out_fname = output.name + (output.type.ext if output.type.ext else "")
+        for sink in self.sinks:
+            if not is_fileset_or_union(sink.type):
+                logger.debug("Skipping sink %s, not a fileset", sink.name)
+                continue
+            out_fname = sink.name + (sink.type.ext if sink.type.ext else "")
 
-            desc = f"Output ({to_mime(output.type, official=False)}): " + output.help
+            desc = f"Output ({to_mime(sink.type, official=False)}): " + sink.help
             # Set the path to the
             if self.internal_upload:
                 cmd_json["outputs"].append(
                     {
-                        "name": output.name,
+                        "name": sink.name,
                         "description": desc,
                         "required": True,
                         "mount": "out",
@@ -201,40 +206,40 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                 )
                 cmd_json["xnat"][0]["output-handlers"].append(
                     {
-                        "name": f"{output.name}-resource",
-                        "accepts-command-output": output.name,
+                        "name": f"{sink.name}-resource",
+                        "accepts-command-output": sink.name,
                         "via-wrapup-command": None,
                         "as-a-child-of": "SESSION",
                         "type": "Resource",
-                        # Shame that the "label" output is fixed, would be good to append
+                        # Shame that the "label" sink is fixed, would be good to append
                         # the "dataset_name" to it as we do in the API put. Might be worth
                         # just dropping XNAT outputs and just using API
-                        "label": path2label(output.name),
-                        "format": output.type.mime_like,
+                        "label": path2label(sink.name),
+                        "format": sink.type.mime_like,
                     }
                 )
-                cmd_args.append(f"--output {output.name} '{output.name}'")
+                cmd_args.append(f"--output {sink.name} '{sink.name}'")
             else:
-                if output.name in input_names:
+                if sink.name in input_names:
                     raise ValueError(
                         "Cannot create output field with the same name as an input "
-                        f"{output.name!r}, you can work around this problem by fixing "
+                        f"{sink.name!r}, you can work around this problem by fixing "
                         "the input field in the command's configuration if it is ok to "
                         "fix."
                     )
-                replacement_key = f"[{output.name.upper()}_OUTPUT]"
+                replacement_key = f"[{sink.name.upper()}_OUTPUT]"
                 cmd_json["inputs"].append(
                     {
-                        "name": output.name,
+                        "name": sink.name,
                         "description": desc,
-                        "type": self.COMMAND_INPUT_TYPES.get(output.type, "string"),
-                        "default-value": output.name,
+                        "type": self.COMMAND_INPUT_TYPES.get(sink.type, "string"),
+                        "default-value": sink.name,
                         "required": False,
                         "user-settable": True,
                         "replacement-key": replacement_key,
                     }
                 )
-                cmd_args.append(f"--output {output.name} '{replacement_key}'")
+                cmd_args.append(f"--output {sink.name} '{replacement_key}'")
 
         if self.internal_upload:
             cmd_args.append("--internal-upload")
@@ -247,7 +252,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         FLAGS_KEY = "#PYDRA2APP_FLAGS#"
         cmd_json["inputs"].append(
             {
-                "name": "Pydra2App_flags",
+                "name": "pydra2app_flags",
                 "description": "Flags passed to `run-pydra2app-pipeline` command",
                 "type": "string",
                 "default-value": (
@@ -285,7 +290,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         )
 
         # Access session via Container service args and derive
-        if self.row_frequency == Clinical.session:
+        if self.operates_on == MedImage.session:
             # Set the object the pipeline is to be run against
             cmd_json["xnat"][0]["contexts"] = ["xnat:imageSessionData"]
             # Create Session input that  can be passed to the command line, which
@@ -378,4 +383,4 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         return re.sub(r"[^a-zA-Z0-9_]+", "_", path)
 
     COMMAND_INPUT_TYPES = {bool: "bool", str: "string", int: "number", float: "number"}
-    VALID_FREQUENCIES = (Clinical.session, Clinical.constant)
+    VALID_FREQUENCIES = (MedImage.session, MedImage.constant)

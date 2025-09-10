@@ -35,7 +35,7 @@ def test_command_execute(
     # Start generating the arguments for the CLI
     # Add source to loaded dataset
     command.execute(
-        address=dataset.locator,
+        address=dataset.address,
         input_values=[
             ("in_file1", "scan1"),
             ("in_file2", "scan2"),
@@ -52,6 +52,7 @@ def test_command_execute(
         loglevel="debug",
         dataset_hierarchy=",".join(bp.hierarchy),
         pipeline_name="test_pipeline",
+        save_frameset=True,
     )
     # Add source column to saved dataset
     reloaded = dataset.reload()
