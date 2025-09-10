@@ -226,9 +226,9 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
     if cmd.internal_upload:
         # If using internal upload, the output names are fixed
-        output_values = {o: o for o in cmd.outputs}
+        output_values = {s: s for s in cmd.sinks}
     else:
-        output_values = {o: o + "_sink" for o in cmd.outputs}
+        output_values = {s: s + "_sink" for s in cmd.sinks}
         launch_inputs.update(output_values)
 
     with xnat_repository.connection:
@@ -297,7 +297,7 @@ def test_multi_command(xnat_repository: Xnat, tmp_path: Path, run_prefix) -> Non
     two_dup_spec = dict(
         name="concatenate",
         task="frametree.testing.tasks:Concatenate",
-        row_frequency=MedImage.session.tostr(),
+        operates_on=MedImage.session.tostr(),
         configuration={"duplicates": 2},
     )
 

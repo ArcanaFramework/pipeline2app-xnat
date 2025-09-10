@@ -52,6 +52,7 @@ def test_command_execute(
         loglevel="debug",
         dataset_hierarchy=",".join(bp.hierarchy),
         pipeline_name="test_pipeline",
+        save_frameset=True,
     )
     # Add source column to saved dataset
     reloaded = dataset.reload()
