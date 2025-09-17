@@ -3,7 +3,7 @@ import typing as ty
 import re
 import attrs
 from fileformats.core import to_mime
-from pydra.utils.typing import is_fileset_or_union
+from pydra.utils.typing import is_fileset_or_union, is_optional, optional_type
 from pydra2app.core.command.base import ContainerCommand
 from pydra2app.core.utils import logger
 from frametree.xnat import XnatViaCS
@@ -189,11 +189,19 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
             if not is_fileset_or_union(sink.type):
                 logger.debug("Skipping sink %s, not a fileset", sink.name)
                 continue
-            out_fname = sink.name + (sink.type.ext if sink.type.ext else "")
+            sink_type = (
+                optional_type(sink.type) if is_optional(sink.type) else sink.type
+            )
+            out_fname = sink.name + (sink_type.ext if sink_type.ext else "")
 
-            desc = f"Output ({to_mime(sink.type, official=False)}): " + sink.help
+            desc = (
+                f"Output ({to_mime(sink_type, official=False)}"
+                + (", optional" if is_optional(sink.type) else "")
+                + "): "
+                + sink.help
+            )
             # Set the path to the
-            if self.internal_upload:
+            if self.internal_upload and not is_optional(sink.type):
                 cmd_json["outputs"].append(
                     {
                         "name": sink.name,
@@ -215,7 +223,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                         # the "dataset_name" to it as we do in the API put. Might be worth
                         # just dropping XNAT outputs and just using API
                         "label": path2label(sink.name),
-                        "format": sink.type.mime_like,
+                        "format": sink_type.mime_like,
                     }
                 )
                 cmd_args.append(f"--output {sink.name} '{sink.name}'")
@@ -232,7 +240,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                     {
                         "name": sink.name,
                         "description": desc,
-                        "type": self.COMMAND_INPUT_TYPES.get(sink.type, "string"),
+                        "type": self.COMMAND_INPUT_TYPES.get(sink_type, "string"),
                         "default-value": sink.name,
                         "required": False,
                         "user-settable": True,
