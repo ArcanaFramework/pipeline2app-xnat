@@ -90,6 +90,9 @@ def test_command_execute_single_session_load(
 ):
     # Get CLI name for dataset (i.e. file system path prepended by 'file_system//')
 
+    logging.getLogger("pydra2app").setLevel(logging.DEBUG)
+    logging.getLogger("frametree").setLevel(logging.DEBUG)
+
     duplicates = 1
     bp = TEST_XNAT_DATASET_BLUEPRINTS["concatenate_test"]
     project_id = run_prefix + "singlesession"
@@ -103,9 +106,6 @@ def test_command_execute_single_session_load(
     )
 
     command = XnatCommand(**command_spec)
-
-    logging.getLogger("pydra2app").setLevel(logging.DEBUG)
-    logging.getLogger("frametree").setLevel(logging.DEBUG)
 
     SESSION_ID = "visit0group0member0"
     EMPTY_SESSION_ID = "visit0group0member1"
@@ -132,8 +132,9 @@ def test_command_execute_single_session_load(
         pipeline_name="test_pipeline",
         ids=[SESSION_ID],
     )
-    # dataset tree is accessed 3, to-process, source and sink nodes
-    assert caplog.text.count("Adding leaf to data tree at path") == 3
+    # Full dataset tree is accessed twice (4 leaves) in creation and then
+    # one leaf is accessed 3 times in: to-process, source and sink nodes
+    assert caplog.text.count("Adding leaf to data tree at path") == 7
     # Add source column to saved dataset
     reloaded = dataset.reload()
     assert not reloaded.columns
