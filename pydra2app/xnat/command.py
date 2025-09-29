@@ -267,8 +267,11 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                     "--worker cf "
                     "--work /wl "  # noqa NB: work dir moved inside container due to file-locking issue on some mounted volumes (see https://github.com/tox-dev/py-filelock/issues/147)
                     "--dataset-name default "
-                    "--loglevel info "
                     f"--export-work {XnatViaCS.WORK_MOUNT}"
+                    "--logger frametree info "
+                    "--logger frametree-xnat info "
+                    "--logger pydra2app info "
+                    "--logger pydra2app-xnat info "
                 ),
                 "required": False,
                 "user-settable": True,

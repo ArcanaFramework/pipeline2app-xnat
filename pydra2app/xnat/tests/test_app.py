@@ -188,7 +188,7 @@ def run_spec(
     return spec
 
 
-def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
+def test_xnat_cs_pipeline(xnat_repository: Xnat, run_spec: dict, work_dir: Path):
     """Tests the complete XNAT deployment pipeline by building and running a
     container"""
 
@@ -223,6 +223,17 @@ def test_xnat_cs_pipeline(xnat_repository, run_spec, run_prefix, work_dir):
 
     for pname, pval in params.items():
         launch_inputs[pname] = pval
+
+    launch_inputs["pydra2app_flags"] = (
+        "--worker cf "
+        "--work /wl "  # noqa NB: work dir moved inside container due to file-locking issue on some mounted volumes (see https://github.com/tox-dev/py-filelock/issues/147)
+        "--dataset-name default "
+        "--export-work /work "
+        "--logger pydra2app debug "
+        "--logger frametree debug "
+        "--logger frametree-xnat debug "
+        "--logger pydra2app-xnat debug "
+    )
 
     if cmd.internal_upload:
         # If using internal upload, the output names are fixed
