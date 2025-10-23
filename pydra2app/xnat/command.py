@@ -126,7 +126,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         for src in self.sources:
             replacement_key = f"[{src.name.upper()}_INPUT]"
             if is_fileset_or_union(src.type):
-                column_datatype = src.type.convertible_from()
+                column_datatype = src.type
                 desc = (
                     f"Match resource ({to_mime(column_datatype, official=False)}) "
                     f"[SCAN-TYPE]: {src.help} "
