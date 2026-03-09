@@ -96,7 +96,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
             "xnat": [
                 {
                     "name": self.name,
-                    "description": f"{self.image.title} ({self.name})",
+                    "description": f"{self.image.title} {self.image.version} ({self.name})",
                     "contexts": [],  # context,
                     "external-inputs": [],  # external_inputs,
                     "derived-inputs": [],  # derived_inputs,
