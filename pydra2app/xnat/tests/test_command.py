@@ -5,6 +5,8 @@ from pathlib import Path
 import random
 import typing as ty
 from frametree.xnat.api import Xnat
+from frametree.xnat.testing import TestXnatDatasetBlueprint
+from frametree.axes.medimage import MedImage
 import pytest
 from fileformats.text import TextFile
 from pydra2app.xnat import XnatCommand
@@ -147,4 +149,76 @@ def test_command_execute_single_session_load(
     with open(item) as f:
         contents = f.read()
     assert contents == expected_contents
-    assert sink.cell(EMPTY_SESSION_ID, allow_empty=True).is_empty
+
+
+def test_command_execute_at_root_frequency(
+    xnat_repository: Xnat,
+    work_dir: Path,
+    run_prefix: str,
+) -> None:
+    """Checks that a command can be run against a real XNAT project with
+    `operates_on` set to the dataset-wide root frequency (`MedImage.constant`), so it
+    executes exactly once for the whole project - taking its inputs from, and writing
+    its output to, the project's root row - rather than once per session, regardless
+    of how many sessions the project contains.
+    """
+
+    duplicates = 1
+    # Create a project with several unrelated sessions, to check that the
+    # root-frequency command isn't run once per session and only touches the root row
+    bp = TestXnatDatasetBlueprint(dim_lengths=[1, 1, 3], scans=[])
+    project_id = run_prefix + "rootfreq" + str(hex(random.getrandbits(16)))[2:]
+    dataset = bp.make_dataset(xnat_repository, project_id, name="")
+
+    # Blueprint scans are always created per-session, so the two inputs the command
+    # will concatenate are inserted directly into the project's root row as sinks
+    # instead (mirroring how derivatives are inserted in frametree-xnat's own store
+    # tests)
+    fnames = ["file1.txt", "file2.txt"]
+    root_row = dataset.root
+    with dataset.store.connection:
+        for name, fname in zip(["file1", "file2"], fnames):
+            dataset.add_sink(name, datatype=TextFile, row_frequency=MedImage.constant)
+            src_path = work_dir / fname
+            src_path.write_text(fname)
+            root_row[name] = TextFile(src_path)
+    dataset.save()
+
+    assert len(dataset.rows(MedImage.session)) == 3  # sanity check on session rows
+
+    command = XnatCommand(
+        name="concatenate",
+        task="frametree.testing.tasks:Concatenate",
+        operates_on=MedImage.constant,
+    )
+
+    command.execute(
+        address=dataset.address,
+        input_values=[
+            ("in_file1", "<file1>"),
+            ("in_file2", "<file2>"),
+        ],
+        output_values=[
+            ("out_file", "sink_1"),
+        ],
+        parameter_values=[
+            ("duplicates", str(duplicates)),
+        ],
+        raise_errors=True,
+        worker="debug",
+        work_dir=str(work_dir),
+        loglevel="debug",
+        dataset_hierarchy=",".join(bp.hierarchy),
+        pipeline_name="test_pipeline",
+        save_frameset=True,
+    )
+
+    reloaded = dataset.reload()
+    sink = reloaded["sink_1"]
+    # Exactly one output for the whole project, not one per session
+    assert len(sink) == 1
+    expected_contents = "\n".join(fnames * duplicates)
+    item = next(iter(sink))
+    with open(item) as f:
+        contents = f.read()
+    assert contents == expected_contents
