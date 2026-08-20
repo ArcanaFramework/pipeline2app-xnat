@@ -73,7 +73,7 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         cmd_json = {
             "name": f"{self.image.name}.{self.name}",
             "description": (f"{self.name} {self.image.version}: {self.image.title}"),
-            "label": self.name,
+            "label": f"{self.name} ({self.image.version})",
             "schema-version": "1.0",
             "image": self.image.reference,
             "index": self.image.registry,
