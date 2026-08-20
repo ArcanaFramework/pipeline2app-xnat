@@ -38,7 +38,6 @@ from frametree.xnat.testing import (
 )
 from frametree.xnat.cs import XnatViaCS
 
-
 # For debugging in IDE's don't catch raised exceptions and let the IDE
 # break at it
 if os.getenv("_PYTEST_RAISE", "0") != "0":
@@ -213,7 +212,7 @@ TEST_XNAT_DATASET_BLUEPRINTS = {
             ),
             FileBP(
                 path="deriv4",
-                row_frequency=MedImage.constant,
+                row_frequency=MedImage.dataset,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
@@ -259,7 +258,7 @@ TEST_XNAT_DATASET_BLUEPRINTS = {
             ),
             FileBP(
                 path="deriv5",
-                row_frequency=MedImage.constant,
+                row_frequency=MedImage.dataset,
                 datatype=Text,
                 filenames=["file.txt"],
             ),
@@ -398,7 +397,7 @@ def access_dataset(
             user=xnat_repository.user,
             password=xnat_repository.password,
             cache_dir=xnat_repository.cache_dir,
-            row_frequency=MedImage.constant,
+            row_frequency=MedImage.dataset,
             input_mount=proj_dir,
             output_mount=Path(mkdtemp()),
             internal_upload=access_method.endswith("internal"),
@@ -678,12 +677,10 @@ def build_app_image(
 
     # Build mock BIDS app image
     with open(build_dir / "Dockerfile", "w") as f:
-        f.write(
-            f"""FROM {base_image}
+        f.write(f"""FROM {base_image}
 ADD ./launch.sh /launch.sh
 RUN chmod +x /launch.sh
-ENTRYPOINT ["/launch.sh"]"""
-        )
+ENTRYPOINT ["/launch.sh"]""")
 
     dc.images.build(path=str(build_dir), tag=tag_name)
 

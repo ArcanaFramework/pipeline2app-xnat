@@ -11,7 +11,6 @@ from frametree.core.axes import Axes
 from frametree.core.utils import path2label
 from frametree.axes.medimage import MedImage
 
-
 if ty.TYPE_CHECKING:
     from .image import XnatApp
 
@@ -398,4 +397,4 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
         return re.sub(r"[^a-zA-Z0-9_]+", "_", path)
 
     COMMAND_INPUT_TYPES = {bool: "bool", str: "string", int: "number", float: "number"}
-    VALID_FREQUENCIES = (MedImage.session, MedImage.constant)
+    VALID_FREQUENCIES = (MedImage.session, MedImage.dataset)

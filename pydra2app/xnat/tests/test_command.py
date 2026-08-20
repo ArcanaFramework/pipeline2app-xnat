@@ -157,7 +157,7 @@ def test_command_execute_at_root_frequency(
     run_prefix: str,
 ) -> None:
     """Checks that a command can be run against a real XNAT project with
-    `operates_on` set to the dataset-wide root frequency (`MedImage.constant`), so it
+    `operates_on` set to the dataset-wide root frequency (`MedImage.dataset`), so it
     executes exactly once for the whole project - taking its inputs from, and writing
     its output to, the project's root row - rather than once per session, regardless
     of how many sessions the project contains.
@@ -178,7 +178,7 @@ def test_command_execute_at_root_frequency(
     root_row = dataset.root
     with dataset.store.connection:
         for name, fname in zip(["file1", "file2"], fnames):
-            dataset.add_sink(name, datatype=TextFile, row_frequency=MedImage.constant)
+            dataset.add_sink(name, datatype=TextFile, row_frequency=MedImage.dataset)
             src_path = work_dir / fname
             src_path.write_text(fname)
             root_row[name] = TextFile(src_path)
@@ -189,7 +189,7 @@ def test_command_execute_at_root_frequency(
     command = XnatCommand(
         name="concatenate",
         task="frametree.testing.tasks:Concatenate",
-        operates_on=MedImage.constant,
+        operates_on=MedImage.dataset,
     )
 
     command.execute(
