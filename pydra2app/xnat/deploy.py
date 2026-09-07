@@ -6,7 +6,6 @@ import xnat
 from pydra2app.core.exceptions import Pydra2AppError
 from pydra2app.core.utils import extract_file_from_docker_image
 
-
 logger = logging.getLogger("pydra2app-xnat")
 
 INTERNAL_INPUTS = ("pydra2app_flags", "PROJECT_ID", "SUBJECT_LABEL", "SESSION_LABEL")
@@ -101,14 +100,14 @@ def install_cs_command(
 
 
 def launch_cs_command(
-    command_id_or_name: ty.Union[int, str],
+    command_id_or_name: int | str,
     project_id: str,
-    session_id: str,
-    inputs: ty.Dict[str, str],
+    inputs: dict[str, ty.Any],
     xlogin: xnat.XNATSession,
+    session_id: str | None = None,
     timeout: int = 1000,  # seconds
     poll_interval: int = 10,  # seconds
-) -> ty.Tuple[int, str, str]:
+) -> tuple[int, str, str]:
     """Installs a new command for the XNAT container service and lanches it on
     the specified session.
 

@@ -76,7 +76,7 @@ allow-direct-references = true
 
 [tool.black]
 line-length = 88
-target-version = ["py38"]
+target-version = ["py310"]
 exclude = "_version.py"
 
 [tool.codespell]
@@ -91,7 +91,7 @@ extend-ignore = ['E203', 'E501', 'E129', 'W503']
 
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.10"
 ignore_missing_imports = true
 strict = true
 namespace_packages = true

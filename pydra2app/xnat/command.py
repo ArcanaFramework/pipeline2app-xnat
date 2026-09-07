@@ -1,15 +1,17 @@
 from __future__ import annotations
-import typing as ty
+
 import re
+import typing as ty
+
 import attrs
 from fileformats.core import to_mime
-from pydra.utils.typing import is_fileset_or_union, is_optional, optional_type
-from pydra2app.core.command.base import ContainerCommand
-from pydra2app.core.utils import logger
-from frametree.xnat import XnatViaCS
+from frametree.axes.medimage import MedImage
 from frametree.core.axes import Axes
 from frametree.core.utils import path2label
-from frametree.axes.medimage import MedImage
+from frametree.xnat import XnatViaCS
+from pydra2app.core.command.base import ContainerCommand
+from pydra2app.core.utils import logger
+from pydra.utils.typing import is_fileset_or_union, is_optional, optional_type
 
 if ty.TYPE_CHECKING:
     from .image import XnatApp
@@ -385,9 +387,40 @@ class XnatCommand(ContainerCommand):  # type: ignore[misc]
                 ]
             )
 
+        elif self.operates_on == MedImage.dataset:
+            # Set the object the pipeline is to be run against
+            cmd_json["xnat"][0]["contexts"] = ["xnat:projectData"]
+
+            # Access the project XNAT object passed to the pipeline. Unlike the
+            # session case, no intermediate derived-input is needed to get hold of
+            # the project ID: the external input's own identity already is the
+            # project being run against, so it can provide the value directly.
+            cmd_json["xnat"][0]["external-inputs"] = [
+                {
+                    "name": "PROJECT",
+                    "description": "Imaging project",
+                    "type": "Project",
+                    "source": None,
+                    "default-value": None,
+                    "required": True,
+                    "replacement-key": None,
+                    "sensitive": None,
+                    "provides-value-for-command-input": "PROJECT_ID",
+                    "provides-files-for-command-mount": "in",
+                    "via-setup-command": None,
+                    "user-settable": False,
+                    "load-children": True,
+                }
+            ]
+            cmd_json["xnat"][0]["derived-inputs"] = []
+
+            # No --ids needed: the pipeline already operates on the whole dataset
+            # (i.e. the project), not a specific row within it
+
         else:
             raise NotImplementedError(
-                "Wrapper currently only supports session-level pipelines"
+                "Wrapper currently only supports session-level and dataset-level "
+                "(project-wide) pipelines"
             )
 
         return cmd_args
